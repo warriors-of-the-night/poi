@@ -15,16 +15,8 @@ module POI
     url = URI::encode(url)
 
     # here we can extract another method: separate URL
-    if url.include? 'cn'
-      uri = url.match(/cn.*?\z/).to_s[2..-1]
-      host = url.match(/.*?\.cn/).to_s[7..-1]
-    elsif url.include? 'com'
-      uri = url.match(/com.*?\z/).to_s[2..-1]
-      host = url.match(/.*?\.com/).to_s[7..-1]
-    elsif url.include? 'net'
-      uri = url.match(/net.*?\z/).to_s[2..-1]
-      host = url.match(/.*?\.net/).to_s[7..-1]
-    end
+    host = URI(url).host
+    uri = url[ 7 + host.length .. -1 ]
 
     http_request = "GET #{uri} HTTP/1.1\r\n"+
     "Content-Type: text/html; charset=utf-8\r\n"+

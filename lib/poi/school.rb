@@ -39,10 +39,11 @@ module POI
           school[:address] = line[3..-1]
         elsif line[0,2] == "地区"
           school[:region] = line[3..-1]
-        elsif line[0,2] == "网址"
-          school[:website] = line0.search('a').first.attribute('href').value
-        elsif line[0,2] == "电话"
-          school[:phone] = line[3..-1]
+        # # deprecated: information we don't need
+        # elsif line[0,2] == "网址"
+        #   school[:website] = line0.search('a').first.attribute('href').value
+        # elsif line[0,2] == "电话"
+        #   school[:phone] = line[3..-1]
         end
       end
 
