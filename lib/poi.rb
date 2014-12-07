@@ -2,10 +2,6 @@ require "nokogiri"
 require 'open-uri'
 require "socket"
 
-require 'poi/elementary'
-require 'poi/middle_school'
-require 'poi/high_school'
-
 module POI
   def request( url )
     """
@@ -39,3 +35,9 @@ module POI
     return html
   end
 end
+
+# require sub classes
+require 'poi/school'
+require 'poi/expo'
+require 'poi/expo_center'
+require 'poi/venue'

@@ -1,10 +1,10 @@
 # -*- coding:utf-8 -*-
 require 'active_record'
 require 'yaml'
-require '??? here what we shou require ?'
+require './lib/poi'
 
 
-namespace :poi_tasks do
+namespace :poi do
   config = YAML::load( File.open('db_config.yaml') )
   ActiveRecord::Base.establish_connection( config )
 
