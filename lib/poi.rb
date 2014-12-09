@@ -28,7 +28,7 @@ module POI
     while line = socket.gets
       html += line
       # automatically end
-      break if html.include?('</HTML>') || html.include?('</html>')
+      break if html.include?('</HTML>') || html.include?('</html>') || html.include?('</body>')
     end
     socket.close
 

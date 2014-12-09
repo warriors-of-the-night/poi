@@ -1,7 +1,8 @@
 # -*- coding:utf-8 -*-
 require './lib/poi'
-require 'Db'
+require 'db'
+require 'thread'
 
-import './task/school.rake'
-import './task/expo.rake'
-import './task/venue.rake'
+require './task/school.rake'
+require './task/expo.rake'
+require './task/venue.rake'

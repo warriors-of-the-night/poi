@@ -19,6 +19,9 @@ module POI
       page.search("li[@class='clear']").each do |li|
         venue = {}
 
+        href = li.search("a").attribute("href").value
+        venue[:id] = href.match(/\d{1,}/).to_s
+
         title = li.search("h3").text.force_encoding('utf-8')
         venue[:name] = title.match('.{1,}\[').to_s[0..-2]
 
@@ -26,9 +29,9 @@ module POI
         venue[:city] = city_region.match('.{1,}-').to_s[0..-2]
         venue[:region] = city_region.match('-.{1,}').to_s[1..-1]
 
-        li.search("p[@class='text']").each do |p|
-          if p.text.start_with?('场馆地址：')
-            venue[:address] = text[5..-1]
+        li.search("p").each do |p_txt|
+          if p_txt.text.start_with?('场馆地址：')
+            venue[:address] =  p_txt.text[5..-1]
           end
         end 
 
@@ -38,9 +41,20 @@ module POI
     end
 
     def self.get_info( venue )
-      page = Nokogiri::HTML( request( venue[:page] ) )
+      url = "http://venue.damai.cn/venue_#{venue[:id]}.html"
+      page = Nokogiri::HTML( request( url ) )
+      
       venue[:intro] = page.search("div[@class='info']").search("div[@id='agree']").text
-      venue[:facilities] = page.search("div[@class='venueBox  facilities']").search("div[@class='in']").text
+      
+      facilities = ""
+      facility_box = page.search("div[@class='venueBox  facilities']").search("div[@class='in']")
+      facility_box.search("dl").each do |dl|
+        dl.search('dd').each do |dd|
+          facilities += dd.text.strip[1..-1]
+        end
+      end
+
+      venue[:facilities] = facilities
       return venue
     end
 

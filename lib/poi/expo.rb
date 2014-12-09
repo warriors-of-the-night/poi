@@ -3,12 +3,12 @@ module POI
 
     extend ::POI
 
-    def self.get_expo_info( param )
+    def self.get_info( expo )
       """
-      Enter exhibition info page using :page in param
-      THen parse details of exhibitons
+      @Input: expo with it url indicated by expo[:page]
+      @Output: expo with detail added
       """
-      url = param[:page]
+      url = expo[:page]
       # use customized request instead of open
       doc = Nokogiri::HTML( request( url ) )
 
@@ -17,11 +17,11 @@ module POI
       info.each do |text|
         text = text.text.rstrip
         if text[0..3] == '展会场馆'
-          param[:location] = text[ 5..-1 ]
+          expo[:location] = text[ 5..-1 ]
         elsif text[0..3] == '组织单位'
-          param[:organizor] = text[ 5..-1 ]
+          expo[:organizor] = text[ 5..-1 ]
         elsif text[0..3] == '官方网站'
-          param[:official_site] = text[ 5..-1 ]
+          expo[:official_site] = text[ 5..-1 ]
         end
       end
       
@@ -29,12 +29,12 @@ module POI
       info = doc.search("div[@class='box exh_box']")
       info.each do |x|
         if x.search("h3").text == "展品范围"
-          param[:range] = x.search("div[@class='box-bd exhdetail']").text
+          expo[:range] = x.search("div[@class='box-bd exhdetail']").text
         elsif x.search("h3").text == "联系信息"
-          param[:contact] = x.search("div[@class='box-bd exhdetail']").text
+          expo[:contact] = x.search("div[@class='box-bd exhdetail']").text
         end
       end
-      return param
+      return expo
     end
 
     def self.get_expos()
@@ -43,29 +43,29 @@ module POI
 
       table = doc.search("ul[@class='trade-news haiwai']")
       
-      exhibitions = []
+      expos = []
       # get date, city and catagory
       table.search("li").each  do |li|
         text = li.text
 
-        exhibition = {}
-        exhibition[:date] = text[0,10]
-        exhibition[:name] = text.match(/】\S\S([0-9]+|[a-zA-Z]+).+/).to_s[3..-1]
+        expo = {}
+        expo[:date] = text[0,10]
+        expo[:name] = text.match(/】\S\S([0-9]+|[a-zA-Z]+).+/).to_s[3..-1]
 
         # Deprecatem, we don't need city info now
         # text.gsub(/【.*?】/).each do |x|
-        #   if exhibition[:cata] == ''
-        #     exhibition[:cata] = x[1,x.length-2] 
+        #   if expo[:cata] == ''
+        #     expo[:cata] = x[1,x.length-2] 
         #     continue
         #   end
-        #   exhibition[:city] = x[1,x.length-2] 
+        #   expo[:city] = x[1,x.length-2] 
         # end
         # get info page
-        exhibition[:page] = li.search("a").attribute("href").value
+        expo[:page] = li.search("a").attribute("href").value
 
-        exhibitions << exhibition
+        expos << expo
       end
-      return exhibitions
+      return expos
     end
 
   end

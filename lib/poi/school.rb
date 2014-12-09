@@ -3,7 +3,7 @@ module POI
     
     extend POI
 
-    def self.get_max_page_num( type = @type )
+    def self.max_page_num( type = @type )
       url ="http://xuexiao.eol.cn/iframe/#{type}.php?page=1"
       html = request( url ) 
       html.force_encoding('utf-8')
@@ -54,6 +54,6 @@ module POI
 end # POI
 
 # Can I put require to the top of the file?
-require 'school/elementary'
-require 'school/high_school'
-require 'school/middle_school'
+require 'poi/school/elementary'
+require 'poi/school/high_school'
+require 'poi/school/middle_school'

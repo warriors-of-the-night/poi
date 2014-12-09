@@ -1,29 +1,22 @@
 namespace :poi do 
-
-
-  task :crawl_expos do
+  task :update_expos do
     # get expo list
-    exhibitions = Expo.get_expos()
-    processed_work = []
+    queue = Queue.new
+    expos = Expo.get_expos()
+
     # fetch each info of each expo
     thread_num = 5
-    works = exhibitions
-
     workers = (0..thread_num).map do 
       # start a new thread
       Thread.new do
         begin 
-          while work = works.pop()
-            raise "Works finished" if work == nil
+          while expo = expos.pop()
+            raise "Works finished" if expo == nil
             # sleep for 1 second
-            sleep( 1.second )
+            sleep( 0.1 )
             begin
-              if !processed_work.include?(work)
-                processed_work << work
-                p "update details of:" + work[:name].force_encoding('utf-8')
-                info = Expo.get_expo_info(work) 
-                BaseGeneralExpo.new( info ).save
-              end
+                p "update details of:" + expo[:name].force_encoding('utf-8')
+                queue.push( Expo.get_info(expo) ) 
             rescue => e
               puts "error loading page:" + work[:page]
             end
@@ -32,37 +25,47 @@ namespace :poi do
         end
       end 
     end # works.map
+
+    # single thread writing
+    writer = Thread.new do
+      # sleep for 1s
+      sleep( 1 )
+      begin
+        while queue.length > 0
+          begin
+            ::Db::BaseGeneralExpo.new( queue.pop ).save.using(:master)
+          rescue => e
+            p "error writting data" + e.to_s
+          end
+          sleep( 1/(queue.length+1) )
+        end
+      rescue => e
+      end
+    end
     # hold main thread 
     workers.map(&:join); 
+    writer.join
   end
 
-  task :crawl_expo_centers do
+  task :update_expo_centers do
     # get expo center id list
-    center_ids = ExpoCenter.get_expo_center_ids()
-    
+    center_ids = ExpoCenter.get_center_ids()
+    queue = Queue.new
+
     # fetch info of each expo center
     thread_num = 5
-    works = center_ids
-    # Avoid duplicated work
-    processed_work = []
     workers = (0..thread_num).map do 
       # start a new thread
       Thread.new do
         begin 
-          while work = works.pop()
-            raise "Works finished" if work == nil
-            # sleep for 1 second
-            sleep( 1.second )
+          while center_id = center_ids.pop()
+            raise "Works finished" if center_id == nil
+            # sleep for 0.1s
+            sleep( 0.1 )
             begin
-              # Avoid duplicated work
-              if !processed_work.include?(work) #&& !BaseGeneralExpoCenter.find_by_id(work.to_i)
-                processed_work << work 
-                p "update details of center. ID : " + work
-                info = ExpoCenter.get_expo_center_info(work) 
-                BaseGeneralExpoCenter.new( info ).save
-              end
+              queue.push( ExpoCenter.get_info( work ))
             rescue => e
-              puts "Errors encoutered when loading Expo Center : #{work}"
+              puts "Errors encoutered when loading Expo Center : #{center_id}"
               puts e
             end
           end
@@ -70,6 +73,23 @@ namespace :poi do
         end
       end 
     end # works.map
+
+    # single thread writing
+    writer = Thread.new do
+      # sleep for 1s
+      sleep( 1 )
+      begin
+        while queue.length > 0
+          begin
+            ::Db::BaseGeneralExpoCenter.new( queue.pop ).save.using(:master)
+          rescue => e
+            p "error writting data" + e.to_s
+          end
+          sleep( 1/(queue.length+1) )
+        end
+      rescue => e
+      end
+    end
     # hold main thread 
     workers.map(&:join); 
   end

@@ -3,7 +3,7 @@ module POI
 
     extend ::POI
 
-    def self.get_expo_center_ids()
+    def self.get_center_ids()
       page = Nokogiri::HTML( request('http://www.haozhanhui.com/exhplace.html') ) 
       province_pages = []
       page.search("div[@class='asfcz']").search("a").each do |x|
@@ -21,7 +21,7 @@ module POI
       return expo_center_ids
     end
 
-    def self.get_expo_center_info( id )
+    def self.get_info( id )
       center = {}
       center[:id] = id.to_i
 
@@ -37,7 +37,7 @@ module POI
           x.search("ul").search("li").each do |li|
             li = li.text
             if li[0..3] =="展馆城市"
-              center[:city_name] = li[5..-1]
+              center[:city] = li[5..-1]
             elsif li[0..3] =="展馆位置"
               center[:address] = li[5..-1]
             elsif li[0..3] =="展馆网址"
