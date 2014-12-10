@@ -1,8 +1,8 @@
 shared_examples "school" do |type|
   Test_school = []
-  it "can get max page num" do
-    max_page_num = eval("::POI::School::#{type}").max_page_num
-  end
+  # it "can get max page num" do
+  #   max_page_num = eval("::POI::School::#{type}").max_page_num
+  # end
 
   it "can get schools in page" do
     schools = eval("::POI::School::#{type}").schools_in_page(1)

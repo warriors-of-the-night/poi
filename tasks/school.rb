@@ -25,7 +25,6 @@ namespace :poi do
 
     thread_num = 5
     queue = Queue.new
-    works = num_of_page
 
     workers = (0..thread_num).map do 
       # start a new thread
@@ -33,17 +32,16 @@ namespace :poi do
         begin 
           while true
             # each thread deal with one page
-            page_i = works
-            works -= 1 
-            p page_i
-            raise "Works finished" if works < 0
+            page_i = num_of_page
+            num_of_page -= 1 
+            raise "Works finished" if num_of_page < 0
             # sleep for 0.1 second
             sleep( 0.1 )
 
             begin # parse schools in one page and store into database
               schools = call(type).schools_in_page( page_i )
               schools.each do | school |
-                queue.push( call(type).get_info( school ))
+                queue.push( school )
               end 
             rescue => e
               puts "error encountered when processing page: " + page_i.to_s
@@ -59,7 +57,7 @@ namespace :poi do
     writer = Thread.new do
       # wait for workers
       sleep( thread_num*0.2 + 5 )
-      while queue.length>0
+      while num_of_page > 0 
         begin
           # shading use :master to write
           base.using(:master).new( queue.pop ).save    
@@ -68,7 +66,7 @@ namespace :poi do
           # todo: add error handling
         end
         # adaptive wrting rate
-        sleep( 1.0/(queue.length+1) )
+        sleep( 3.0/(queue.length+1) )
       end
     end
 
