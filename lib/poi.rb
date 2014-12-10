@@ -9,7 +9,6 @@ module POI
     """
     # force encoding
     url = URI::encode(url)
-
     # here we can extract another method: separate URL
     host = URI(url).host
     uri = url[ 7 + host.length .. -1 ]
@@ -37,7 +36,7 @@ module POI
 end
 
 # require sub classes
-require 'poi/school'
-require 'poi/expo'
-require 'poi/expo_center'
-require 'poi/venue'
+require_relative 'poi/school'
+require_relative 'poi/expo'
+require_relative 'poi/expo_center'
+require_relative 'poi/venue'

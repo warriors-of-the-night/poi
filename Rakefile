@@ -1,7 +1,11 @@
-# -*- coding:utf-8 -*-
+require './lib/poi'
 require 'db'
 require 'thread'
+require "active_record"
+# require "baidumap"
+# shading
 
-require './task/school.rake'
-require './task/expo.rake'
-require './task/venue.rake'
+require_relative 'tasks/school'
+require_relative 'tasks/expo'
+require_relative 'tasks/venue'
+require_relative 'tasks/baidumap'

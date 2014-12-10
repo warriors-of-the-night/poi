@@ -2,7 +2,7 @@ namespace :poi do
   desc "update venues' info"
   task :update_venues do 
    # todo: dynamic call
-    num_of_page = ::POI::Venue.max_page_num
+    num_of_page = POI::Venue.max_page_num
 
     thread_num = 10
     queue = Queue.new
@@ -21,12 +21,13 @@ namespace :poi do
             sleep( 0.1 )
 
             begin # parse schools in one page and store into database
-              venues = Venue.venues_in_page( page_i )
+              venues = POI::Venue.venues_in_page( page_i )
               venues.each do | venue |
-                queue.push( Venue.get_info( venue ) )
+                queue.push( POI::Venue.get_info( venue ) )
               end 
             rescue => e
               puts "error encountered when processing page:" + page_i.to_s
+              p e
             end
           end
         rescue ThreadError
@@ -41,10 +42,11 @@ namespace :poi do
       while true
         begin
           # shading use :master to write
-          ::Db::BaseGeneralVenue.new( queue.pop ).save.using(:master)
+          ::Db::BaseGeneralVenue.using(:master).new( queue.pop ).save
           # adaptive wrting rate
           sleep( 1.0/(queue.length+1) )
         rescue => e
+          p e
           # todo: add error handling
         end
       end

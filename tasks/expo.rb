@@ -2,7 +2,7 @@ namespace :poi do
   task :update_expos do
     # get expo list
     queue = Queue.new
-    expos = Expo.get_expos()
+    expos = POI::Expo.get_expos()
 
     # fetch each info of each expo
     thread_num = 5
@@ -15,8 +15,7 @@ namespace :poi do
             # sleep for 1 second
             sleep( 0.1 )
             begin
-                p "update details of:" + expo[:name].force_encoding('utf-8')
-                queue.push( Expo.get_info(expo) ) 
+                queue.push( POI::Expo.get_info(expo) ) 
             rescue => e
               puts "error loading page:" + work[:page]
             end
@@ -32,8 +31,10 @@ namespace :poi do
       sleep( 1 )
       begin
         while queue.length > 0
+                    p queue.length 
+
           begin
-            ::Db::BaseGeneralExpo.new( queue.pop ).save.using(:master)
+            ::Db::BaseGeneralExpo.using(:master).new( queue.pop ).save
           rescue => e
             p "error writting data" + e.to_s
           end
@@ -49,7 +50,7 @@ namespace :poi do
 
   task :update_expo_centers do
     # get expo center id list
-    center_ids = ExpoCenter.get_center_ids()
+    center_ids = POI::ExpoCenter.get_center_ids()
     queue = Queue.new
 
     # fetch info of each expo center
@@ -63,7 +64,7 @@ namespace :poi do
             # sleep for 0.1s
             sleep( 0.1 )
             begin
-              queue.push( ExpoCenter.get_info( work ))
+              queue.push( POI::ExpoCenter.get_info( work ))
             rescue => e
               puts "Errors encoutered when loading Expo Center : #{center_id}"
               puts e
@@ -80,8 +81,9 @@ namespace :poi do
       sleep( 1 )
       begin
         while queue.length > 0
+          p queue.length 
           begin
-            ::Db::BaseGeneralExpoCenter.new( queue.pop ).save.using(:master)
+            ::Db::BaseGeneralExpoCenter.using(:master).new( queue.pop ).save
           rescue => e
             p "error writting data" + e.to_s
           end

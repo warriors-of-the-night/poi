@@ -53,8 +53,7 @@ module POI
           facilities += dd.text.strip[1..-1]
         end
       end
-
-      venue[:facilities] = facilities
+      venue[:facilities] = '' if facilities == '无无无无' else facilities
       return venue
     end
 
