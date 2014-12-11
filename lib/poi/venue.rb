@@ -46,14 +46,17 @@ module POI
       
       venue[:intro] = page.search("div[@class='info']").search("div[@id='agree']").text
       
-      facilities = ""
+      facilities = ''
       facility_box = page.search("div[@class='venueBox  facilities']").search("div[@class='in']")
       facility_box.search("dl").each do |dl|
         dl.search('dd').each do |dd|
-          facilities += dd.text.strip[1..-1]
+          facility = dd.text.strip[1..-1]
+          if facility != '无'
+            facilities += facility
+          end
         end
       end
-      venue[:facilities] = '' if facilities == '无无无无' else facilities
+      venue[:facilities] = facilities
       return venue
     end
 
