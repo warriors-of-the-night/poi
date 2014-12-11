@@ -2,27 +2,31 @@ namespace :poi do
   """
   usage: $rake poi:fectu_something[your_ak_here(not a string)]
   """
-
+  desc "seach nearby bus station of given location"
   task :fetch_bus,:ak do |task, args|
     ak = args[:ak]
     fetch( ak, :bus, "公交车站" )
   end
 
+  desc "seach nearby metro entrance of given location"
   task :fetch_metro,:ak do |task, args|
     ak = args[:ak]
     fetch( ak, :metro, "地铁" )
   end
 
+  desc "seach nearby restaurant of given location"
   task :fetch_cafe,:ak do |task, args|
     ak = args[:ak]
     fetch( ak, :cafe, "餐饮" )
   end
 
+  desc "seach nearby bank of given location"
   task :fetch_bank,:ak do |task, args|
     ak = args[:ak]
     fetch( ak, :bank, "银行" )
   end
 
+  desc "seach nearby spots of given location"
   task :fetch_spot,:ak do |task, args|
     ak = args[:ak]
     fetch( ak, :spot, "景点" )

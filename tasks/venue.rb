@@ -1,5 +1,5 @@
 namespace :poi do
-  desc "update venues' info"
+  desc "crawl venues' info from 'www.damai.cn'"
   task :update_venues do 
    # todo: dynamic call
     num_of_page = POI::Venue.max_page_num

@@ -1,4 +1,5 @@
 namespace :poi do 
+  desc "crawl expo info from 'www.haozhanhui.com'"
   task :update_expos do
     # get expo list
     queue = Queue.new
@@ -47,7 +48,8 @@ namespace :poi do
     workers.map(&:join); 
     writer.join
   end
-
+  
+  desc "crawl expo center info from 'www.haozhanhui.com'"
   task :update_expo_centers do
     # get expo center id list
     center_ids = POI::ExpoCenter.get_center_ids()

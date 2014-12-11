@@ -1,16 +1,16 @@
 namespace :poi do
 
-  # crawl elementary schools
+  desc "crawl elementary schools' name and address from 'xuexiao.eol.cn'"
   task :update_elementary_schools do 
     update_school(::Db::BaseElementarySchool, 'Elementary')
   end
 
-  # crawl middle schools
+  desc "crawl middle schools' name and address from 'xuexiao.eol.cn'"
   task :update_middle_schools do 
     update_school(::Db::BaseMiddleSchool, 'Middle')
   end
 
-  # crawl high schools
+  desc "crawl high schools' name and address from 'xuexiao.eol.cn'"
   task :update_high_schools do 
     update_school(::Db::BaseHighSchool, 'High')
   end
