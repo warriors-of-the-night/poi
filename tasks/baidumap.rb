@@ -35,7 +35,7 @@ namespace :poi do
   #####################
   # Helper  functions #
   #####################
-  def fetch( ak, column, keyword, thread_num = 15, queue_length = 10000 )
+  def fetch( ak, column, keyword, thread_num = 10, queue_length = 1000 )
     # use queue instead of array to ensure thread safe
     queue_in = Queue.new
     queue_out = Queue.new
@@ -46,15 +46,16 @@ namespace :poi do
       begin
         condition = "#{column.to_s}=''"
         # shading use :slave1 to write
-        ::Db::BaseAutonaviHotelPoi.using(:slave1).find_each(batch_size:10).each do |record|
+        threshold =  (Time.now - 180.day).to_s
+        ::Db::BaseAutonaviHotelPoi.using(:slave1).where( "updated_at <= ?", threshold ).each do |record|
+          queue_in.push( record ) 
           # if queue_in is full, stop pushing until it is half empty.
           if queue_in.length > queue_length
             while true
-              sleep(1)
+              sleep(2)
               break if queue_in.length < 0.5*queue_length
             end
           end
-          queue_in.push( record ) if record[:updated_at] < Time.now - 180.day
         end
       rescue => e
         p e
@@ -93,7 +94,7 @@ namespace :poi do
           # shading use :master to write
           queue_out.pop.save.using(:master)
           # adaptive wrting rate
-          sleep( 1.0/(queue_out.length+1) )
+          sleep( 4.0/(queue_out.length+1) )
         rescue => e
           # todo: add error handling
         end
