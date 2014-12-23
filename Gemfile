@@ -1,3 +1,3 @@
 gem "db"
-gem "active_record"
+gem "activerecord"
 gem "baidumap"
