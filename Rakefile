@@ -1,5 +1,5 @@
 require './lib/poi'
-require 'db'
+# require 'db'
 require 'thread'
 require "active_record"
 require "baidumap"
