@@ -1,3 +1,4 @@
-gem "db"
-gem "active_record"
-gem "baidumap"
+source 'https://rubygems.org'
+
+# Specify your gem's dependencies in poi.gemspec
+gemspec
