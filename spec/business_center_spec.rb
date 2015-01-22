@@ -5,7 +5,7 @@ describe ::POI::BusinessCenter do
   end
 
   it "can get business in guangzhou" do
-    expect(::POI::BusinessCenter.centers('4')[0].keys).to eq [:center_id, :city_id, :name]
+    expect(::POI::BusinessCenter.centers('4')[0].keys).to eq [:center_id, :city_id, :city_name, :name]
   end
 
 end

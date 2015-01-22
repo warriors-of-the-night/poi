@@ -9,32 +9,38 @@ namespace :poi do
     counter = redis.get('city_stuck').to_i
     # start a new thread
     producer = Thread.new do
-      begin 
         until counter > city_num do
-          # Sleep for 3 second
-          sleep(3)
-          puts "city_id: #{counter} finished!"
-          limiter = 0
+          # Sleep for 2 second
+          sleep(2)
+          limiter = 0 
           begin 
             business_center = POI::BusinessCenter.centers(counter)
             business_center.each do |center|
               pipeline.push(center)
             end 
-          rescue Errno::ETIMEDOUT
+            puts "Processing city_id: #{counter} finished!"
+
+          # Exception handler
+          rescue =>e
             limiter+=1
             retry if limiter<3
-            puts "#{e} Error encountered when processing page: #{counter}" 
-          rescue OpenURI::HTTPError
-            redis.set('city_stuck',1)
-            exit
+            p e 
+            puts "Error encountered when processing city_id: #{counter}" 
+            case e
+              when ArgumentError
+                city_num+=1
+              when Errno
+                next
+              when OpenURI::HTTPError
+                redis.set('city_stuck', counter)
+                exit  
+              else
+                exit
+            end
           end
           counter+=1
         end
-      rescue ThreadError=>e
-        p e.message        
-        exit
-      end
-      redis.set('city_stuck',1)
+      redis.set('city_stuck', 1)
       exit
     end 
 
@@ -56,8 +62,8 @@ namespace :poi do
       end
     end
 
-    # hold main thread 
-    producer.join; 
+    # Wait for child threads
+    producer.join
     consumer.join
   end
 end
