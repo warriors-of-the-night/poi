@@ -10,7 +10,7 @@ namespace :poi do
     # start a new thread
     producer = Thread.new do
       begin 
-        unless counter > city_num
+        until counter > city_num do
           # Sleep for 3 second
           sleep(3)
           puts "city_id: #{counter} finished!"
