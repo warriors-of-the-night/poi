@@ -1,9 +1,13 @@
 require 'redis'
 namespace :poi do
-  desc "download the business centers of the whole country'"
-  task :dianping_business_center do 
+  desc "download the place of interests of the whole country in dianping.com"
+  task :dianping_pois,[:type_en] do |t, args| 
+    mapping = {'center' => '商区', 'metro' => '地铁沿线', 
+                'landmark' => '地标', 'other' =>'其他' }
+    poi = mapping[args[:type_en]]
+    selector = "//h2[text()="+"'#{poi}']/.."
     pipeline = Queue.new
-    city_num  = POI::BusinessCenter.cities.size
+    city_num  = POI::Dianping.cities.size
    # Redis to record the interruption
     redis = Redis.new(:host => "127.0.1.1", :port => 6379)
     counter = redis.get('city_stuck').to_i
@@ -14,7 +18,7 @@ namespace :poi do
           sleep(2)
           limiter = 0 
           begin 
-            business_center = POI::BusinessCenter.centers(counter)
+            business_center = POI::Dianping.centers(counter, args[:type_en], selector)
             business_center.each do |center|
               pipeline.push(center)
             end 
@@ -51,8 +55,8 @@ namespace :poi do
       while true
         begin
           item = pipeline.pop
-          existed_item = Db::Base_poi_center.find_by(center_id: item[:center_id])
-          existed_item.nil? ? Db::Base_poi_center.new(item).save : existed_item.update(item)
+          existed_item = Db::Dianping_poi.find_by(center_id: item[:center_id])
+          existed_item.nil? ? Db::Dianping_poi.new(item).save : existed_item.update(item)
           # adaptive wrting rate
           sleep(1.0/(pipeline.length+1))
         rescue => e
