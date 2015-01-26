@@ -7,10 +7,10 @@ namespace :poi do
 #   rake poi:dianping_pois['center']
 #
   desc "download the place of interests of the whole country in dianping.com"
-  task :dianping_pois,[:type_en] do |t, args| 
+  task :dianping_pois,[:type_en] do |t, args|
     timer = Time.now
     # The mapping hash
-    mapping = { 'center' => '商区', 'metro' => '地铁沿线', 
+    mapping = { 'center' => '商区', 'metro' => '地铁沿线',
                 'landmark' => '地标', 'other' =>'分类' }
     poi = mapping[args[:type_en]]
     selector = "//h2[text()="+"'#{poi}']/.."
@@ -18,7 +18,7 @@ namespace :poi do
     city_num  = POI::Dianping.cities.size
 
     # Redis to record the interruption
-    redis = Redis.new(:host => "127.0.1.1", :port => 6379)
+    redis = Redis.new(:host => "127.0.0.1", :port => 6379)
     city_id = redis.get('city_stuck').nil? ? 1 : redis.get('city_stuck').to_i
 
    # log msg
@@ -33,20 +33,20 @@ namespace :poi do
         until city_id > city_num do
           # Sleep for 2 second
           sleep(2)
-          limiter = 0 
-          begin 
+          limiter = 0
+          begin
             business_center = POI::Dianping.centers(city_id, args[:type_en], selector)
             business_center.each do |center|
               pipeline.push(center)
-            end 
+            end
             puts "Processing city_id: #{city_id} finished!"
 
           # Exception handler
           rescue =>e
             limiter+=1
             retry if limiter<3
-            p e 
-            puts "\e[31mError encountered when processing city_id: #{city_id}\e[0m" 
+            p e
+            puts "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
             case e
               when ArgumentError
                 city_num+=1
@@ -56,7 +56,7 @@ namespace :poi do
                 redis.set('city_stuck', city_id)
                 msg = %Q(#{Time.now}  #{e} finished: #{city_id} , unfinished: #{ city_num-city_id }, Timeleft: #{(Time.now-timer)*city_id/city_num}\n)
                 log(msg)
-                exit  
+                exit
               else
                 exit
             end
@@ -64,8 +64,8 @@ namespace :poi do
           city_id+=1
         end
       redis.set('city_stuck', 1)
-      abort "\e[32m Works finished!\e[0m" 
-    end 
+      abort "\e[32m Works finished!\e[0m"
+    end
 
     #Consumer thread
     consumer = Thread.new do
