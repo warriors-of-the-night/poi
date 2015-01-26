@@ -1,4 +1,4 @@
-require'./spec_helper'
+require 'spec_helper'
 describe ::POI::Dianping do
   selector = "//h2[text()='商区']/.."
   it "can get city number 403" do

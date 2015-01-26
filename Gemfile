@@ -9,4 +9,3 @@ gem 'mysql2','=0.3.17'
 gem 'redis','=3.2.0'
 gem 'whenever','=0.9.4'
 gem 'capistrano','=3.3.5'
-# Specify your gem's dependencies in poi.gemspec

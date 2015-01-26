@@ -1,4 +1,4 @@
-describe ::POI::Venue do 
+describe ::POI::Venue do
 
   it "can get max page num" do
     max_page_num = POI::Venue.max_page_num
