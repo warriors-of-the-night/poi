@@ -77,7 +77,6 @@ namespace :poi do
       if ak.nil?
         sleep 3600
         i = 0
-        retry
       end
       fetch( ak, :spot, "景点" )
     rescue RuntimeError => e
