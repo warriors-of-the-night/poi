@@ -2,7 +2,7 @@ module POI
   class Dianping
     extend POI
 
-  # City list from `http://www.dianping.com/citylist`
+   # City list from `http://www.dianping.com/citylist`
     def self.cities
       web_page = Nokogiri::HTML(open(URI('http://www.dianping.com/citylist')))
       internal_cities = web_page.at("//ul[@class='glossary-list gl-region Hide']")
@@ -17,6 +17,7 @@ module POI
     def self.centers(city_id, type, selector)
       url = "http://www.dianping.com/shopall/#{city_id}/0"
       web_page = Nokogiri::HTML open URI(url)
+
       # Exception will be raised if bad Argument
       raise ArgumentError, "Bad Argument" if web_page.at("//div[@class='aboutBox errorMessage']")
 
