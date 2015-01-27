@@ -1,3 +1,11 @@
-gem "db"
-gem "activerecord"
-gem "baidumap"
+source 'http://ruby.taobao.org'
+gem 'httparty','=0.13.3'
+gem 'nokogiri','=1.6.6.2'
+gem 'baidumap','=0.3.1'
+gem 'db','~>10.10'
+gem 'activerecord','=4.2.0'
+gem 'ar-octopus','=0.8.4'
+gem 'mysql2','=0.3.17'
+gem 'redis','=3.2.0'
+gem 'whenever','=0.9.4'
+gem 'capistrano','=3.3.5'
