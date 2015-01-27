@@ -1,19 +1,11 @@
-require 'redis'
 namespace :poi do
-# Arguments: type_en[center, metro, landmark, other]
 #
 # === Example
-#
-#   rake poi:dianping_pois['center']
+#   rake poi:dianping
 #
   desc "download the place of interests of the whole country in dianping.com"
-  task :dianping_pois,[:type_en] do |t, args|
-    timer = Time.now
-    # The mapping hash
-    mapping = { 'center' => '商区', 'metro' => '地铁沿线',
-                'landmark' => '地标', 'other' =>'分类' }
-    poi = mapping[args[:type_en]]
-    selector = "//h2[text()="+"'#{poi}']/.."
+  task :dianping do 
+    timer = Time.now 
     pipeline = Queue.new
     city_num  = POI::Dianping.cities.size
 
@@ -35,9 +27,9 @@ namespace :poi do
           sleep(2)
           limiter = 0
           begin
-            business_center = POI::Dianping.centers(city_id, args[:type_en], selector)
-            business_center.each do |center|
-              pipeline.push(center)
+            pois = POI::Dianping.pois(city_id)
+            pois.each do |poi|
+              pipeline.push(poi)
             end
             puts "Processing city_id: #{city_id} finished!"
 
@@ -46,7 +38,7 @@ namespace :poi do
             limiter+=1
             retry if limiter<3
             p e
-            puts "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
+            warn "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
             case e
               when ArgumentError
                 city_num+=1
@@ -74,8 +66,8 @@ namespace :poi do
       while true
         begin
           item = pipeline.pop
-          existed_item = Db::Dianping_poi.find_by(center_id: item[:center_id], city_id: item[:city_id])
-          existed_item.nil? ? Db::Dianping_poi.new(item).save : existed_item.update(item)
+          existed_item = Db::DianpingPoi.find_by(center_id: item[:center_id], city_id: item[:city_id])
+          existed_item.nil? ? Db::DianpingPoi.new(item).save : existed_item.update(item)
           # adaptive wrting rate
           sleep(1.0/(pipeline.length+1))
         rescue => e

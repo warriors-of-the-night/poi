@@ -1,12 +1,15 @@
+# dependencies
 require './lib/poi'
 # require 'db'
 require 'thread'
 require "active_record"
 require 'baidumap'
+require 'redis'
 # shading
 
-require_relative 'tasks/school'
-require_relative 'tasks/expo'
-require_relative 'tasks/venue'
-require_relative 'tasks/baidumap'
-require_relative 'tasks/central'
+# tasks
+require './tasks/school'
+require './tasks/expo'
+require './tasks/venue'
+require './tasks/baidumap'
+require './tasks/dianping'

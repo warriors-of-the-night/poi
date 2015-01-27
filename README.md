@@ -1,4 +1,4 @@
-# Poi
+# POI
 
 It can crawl info of Place of Interest.
 
