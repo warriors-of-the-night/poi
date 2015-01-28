@@ -23,48 +23,80 @@ namespace :poi do
   desc "seach nearby bus station of given location"
   task :fetch_bus,:ak, :db_name do |task, args|
     BaseAutonaviHotelPoi.table_name = args[:db_name]
+    i = 0
     begin
-      ak = key_list.shift
+      ak = key_list[i]
+      if ak.nil?
+        sleep 3600
+        i = 0
+        redo
+      end
       fetch( ak, :bus, "公交车站" )
-    rescue => e
-      raise '配额全部用光' if key_list.count == 0
-      retry if e.to_s == '配额用光'
+    rescue RuntimeError => e
+      if e.to_s == '配额用光'
+        i = i + 1
+        retry
+      end
     end
   end
 
   desc "seach nearby metro entrance of given location"
   task :fetch_metro,:ak, :db_name do |task, args|
     BaseAutonaviHotelPoi.table_name = args[:db_name]
+    i = 0
     begin
-      ak = key_list.shift
+      ak = key_list[i]
+      if ak.nil?
+        sleep 3600
+        i = 0
+        redo
+      end
       fetch( ak, :metro, "地铁" )
-    rescue => e
-      raise '配额全部用光' if key_list.count == 0
-      retry if e.to_s == '配额用光'
+    rescue RuntimeError => e
+      if e.to_s == '配额用光'
+        i = i + 1
+        retry
+      end
     end
   end
 
   desc "seach nearby restaurant of given location"
   task :fetch_cafe, :db_name do |task, args|
     BaseAutonaviHotelPoi.table_name = args[:db_name]
+    i = 0
     begin
-      ak = key_list.shift
+      ak = key_list[i]
+      if ak.nil?
+        sleep 3600
+        i = 0
+        redo
+      end
       fetch( ak, :cafe, "餐饮" )
-    rescue => e
-      raise '配额全部用光' if key_list.count == 0
-      retry if e.to_s == '配额用光'
+    rescue RuntimeError => e
+      if e.to_s == '配额用光'
+        i = i + 1
+        retry
+      end
     end
   end
 
   desc "seach nearby bank of given location"
   task :fetch_bank, :db_name do |task, args|
     BaseAutonaviHotelPoi.table_name = args[:db_name]
+    i = 0
     begin
-      ak = key_list.shift
+      ak = key_list[i]
+      if ak.nil?
+        sleep 3600
+        i = 0
+        redo
+      end
       fetch( ak, :bank, "银行" )
-    rescue => e
-      raise '配额全部用光' if key_list.count == 0
-      retry if e.to_s == '配额用光'
+    rescue RuntimeError => e
+      if e.to_s == '配额用光'
+        i = i + 1
+        retry
+      end
     end
   end
 
@@ -77,6 +109,7 @@ namespace :poi do
       if ak.nil?
         sleep 3600
         i = 0
+        redo
       end
       fetch( ak, :spot, "景点" )
     rescue RuntimeError => e
@@ -182,12 +215,12 @@ namespace :poi do
     delete street_id and uid in result
     """
     # radius = 1000
-    redius = 2000
+    radius = 2000
     # last_num_of_result = -1
     # while true
     begin
       result = ::Baidumap::Request::Place.new(ak).search_by_radius( keyword,lat,lng,radius);
-    rescue NoMethodError
+    rescue NoMethodError, Net::ReadTimeout
       retry
     end
     result = result.result
