@@ -2,7 +2,6 @@
 require './lib/poi'
 require 'db'
 require 'thread'
-require "active_record"
 require 'baidumap'
 require 'redis'
 # shading
