@@ -34,7 +34,9 @@ module POI
         pois_html = web_page.xpath("//h2[text()='"+"#{word}']/..").search("a[@class='B']")
         pois_html.each { |item|
           uri_split = item['href'].split('/')    # An example of href just like "/search/category/4/0/r13880"
-          pois << {:name => item.text,  :cata => type, :center_id => uri_split[-1], :city_id => uri_split[-3],:city_name => title }
+          item.text.split('/').each do |name|
+          pois << {:name => name,  :cata => type, :center_id => uri_split[-1], :city_id => uri_split[-3],:city_name => title }
+          end
         }
       end
       pois
