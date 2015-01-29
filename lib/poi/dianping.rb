@@ -41,3 +41,8 @@ module POI
     end
   end
 end
+
+module Db
+  class DianpingPoi < ActiveRecord::Base
+  end
+end

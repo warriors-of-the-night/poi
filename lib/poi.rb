@@ -1,7 +1,7 @@
-require "nokogiri"
+require 'nokogiri'
 require 'open-uri'
-require "socket"
-
+require 'socket'
+require 'active_record'
 module POI
   def request( url )
     """

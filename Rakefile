@@ -1,4 +1,5 @@
 # DEPENDENCIES
+require "bundler/gem_tasks"
 require './lib/poi'
 require 'db'
 require 'thread'
