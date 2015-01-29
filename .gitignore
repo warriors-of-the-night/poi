@@ -16,10 +16,4 @@ config/deploy/staging.rb
 
 Capfile
 
-config/deploy.rb
-
-config/deploy/production.rb
-
-config/deploy/staging.rb
-
 *.lock
