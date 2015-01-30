@@ -41,6 +41,8 @@ namespace :poi do
             warn "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
             case e
               when ArgumentError
+                msg = %Q(#{Time.now}  #{e} \n)
+                log(msg)
                 city_num+=1
               when Errno
                 next
@@ -66,7 +68,7 @@ namespace :poi do
       while true
         begin
           item = pipeline.pop
-          existed_item = Db::DianpingPoi.find_by(center_id: item[:center_id], city_id: item[:city_id])
+          existed_item = Db::DianpingPoi.find_by(center_id: item[:center_id], city_id: item[:city_id], name: item[:name])
           existed_item.nil? ? Db::DianpingPoi.new(item).save : existed_item.update(item)
           # adaptive wrting rate
           sleep(1.0/(pipeline.length+1))
