@@ -2,6 +2,14 @@ require 'nokogiri'
 require 'open-uri'
 require 'socket'
 require 'active_record'
+
+# require sub classes
+require 'poi/school'
+require 'poi/expo'
+require 'poi/expo_center'
+require 'poi/venue'
+require 'poi/dianping'
+require 'poi/hospital'
 module POI
   def request( url )
     """
@@ -34,10 +42,3 @@ module POI
     return html
   end
 end
-
-# require sub classes
-require_relative 'poi/school'
-require_relative 'poi/expo'
-require_relative 'poi/expo_center'
-require_relative 'poi/venue'
-require_relative 'poi/dianping'

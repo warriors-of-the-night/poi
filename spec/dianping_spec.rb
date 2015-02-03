@@ -1,4 +1,4 @@
-require './spec_helper'
+require 'spec_helper'
 describe ::POI::Dianping do
   it "can get city number 403" do
    expect(::POI::Dianping.cities.size).to eq 403
