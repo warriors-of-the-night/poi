@@ -1,6 +1,6 @@
 # Table to store the data of hospital
 module Db
-  class Hospital < ActiveRecord::Base
+  class BasePoiHospital < ActiveRecord::Base
   end
 end
 
@@ -104,8 +104,8 @@ module POI
       while true
         begin
           item = pipeline.pop
-          existed_item = Db::Hospital.find_by(name: item[:name], city: item[:city])
-          existed_item.nil? ? Db::Hospital.new(item).save : existed_item.update(item)
+          existed_item = Db::BasePoiHospital.find_by(name: item[:name], city: item[:city])
+          existed_item.nil? ? Db::BasePoiHospital.new(item).save : existed_item.update(item)
           # adaptive wrting rate
           sleep(1.0/(pipeline.length+1))
         rescue => e

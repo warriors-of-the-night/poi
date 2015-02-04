@@ -41,7 +41,7 @@ namespace :poi do
             warn "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
             case e
               when ArgumentError
-                msg = %Q(#{Time.now}  #{e} \n)
+                msg = %Q(#{Time.now} http://www.dianping.com/shopall/#{city_id}/0" #{e} \n)
                 log(msg)
                 city_num+=1
               when Errno
