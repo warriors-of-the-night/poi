@@ -26,22 +26,31 @@ module POI
 
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def process
-      dp_landmarks = Db::DianpingPoi.where(cata: 'landmark')
-      dp_landmarks.find_each do |landmark|
-        sleep(2)
-        puts "Encyclopedia content of #{landmark[:name]}"
-        content = self.content(landmark[:name]) || self.attemp(landmark[:name])
-        if content.nil? 
-           puts "\e[31m Return nil\e[0m" 
-        else
-           puts "\e[32m Content: #{content[0..20]}...\e[0m"
+      begin
+        timer = Time.now
+        counter = 0
+        dp_landmarks = Db::DianpingPoi.where(cata: 'landmark')
+        dp_landmarks.find_each do |landmark|
+          sleep(2)
+          counter+=1
+          puts "Encyclopedia content of #{landmark[:name]}"
+          content = self.content(landmark[:name]) || self.attemp(landmark[:name])
+          if content.nil? 
+             puts "\e[31m Return nil\e[0m" 
+          else
+             puts "\e[32m Content: #{content[0..20]}...\e[0m"
+          end
+          encyclopedia_item = {
+              :name=>landmark[:name], 
+              :city=>landmark[:city_name],
+              :content=>content
+            }
+        self.insert(encyclopedia_item)
         end
-        encyclopedia_item = {
-            :name=>landmark[:name], 
-            :city=>landmark[:city_name],
-            :content=>content
-          }
-      self.insert(encyclopedia_item)
+      rescue =>e
+        msg = %Q(#{Time.now}  #{e} finished: #{counter} , unfinished: #{ dp_landmarks.size-counter }, Timeleft: #{(Time.now-timer)*counter/dp_landmarks.size}\n)
+        self.log(msg)
+        exit
       end
     end
 
@@ -56,6 +65,13 @@ module POI
     def url(base_uri,landmark)
       landmark = landmark.gsub(/（.+）/,'')
       URI::encode "#{base_uri}#{landmark}"
+    end
+
+   # log msg
+    def log(msg)
+      log_file = File.open("encyclopedia.log", "a+")
+      log_file.syswrite(msg)
+      log_file.close
     end
 
   end

@@ -5,7 +5,7 @@ namespace :poi do
 #
   desc "download the encyclopedia of the landmarks "
   task :encyclopedia do 
-    encyclopedia = POI::Encyclopedia.new
-    encyclopedia.process
+      encyclopedia = POI::Encyclopedia.new
+      encyclopedia.process
   end
 end
