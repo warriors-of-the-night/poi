@@ -10,6 +10,7 @@ require 'poi/expo_center'
 require 'poi/venue'
 require 'poi/dianping'
 require 'poi/hospital'
+require 'poi/encyclopedia'
 module POI
   def request( url )
     """
