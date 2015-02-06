@@ -11,17 +11,14 @@ module POI
   
    # Encyclopedia content of landmark
     def content(landmark)
-      @html = Nokogiri::HTML open(self.url(BASE_URL, landmark))
-      @content = @html.at("//div[@class='summary']/p")
-      @content.nil? ? nil : @content.text
-    end
-
-    # Fetch the first result if content return nil
-    def attemp(landmark)
-      base_uri = 'http://so.baike.com/s/doc/' 
-      @html = Nokogiri::HTML open(self.url(base_uri, landmark))
-      @content = @html.at("//div[@class='result-list']/p")
-      @content.nil? ? nil : @content.text
+      @html = Nokogiri::HTML open(self.url(landmark))
+      @summary = @html.at("//div[@class='summary']/p[text()!='']")
+      if @summary.nil?
+        @content = @html.at("//div[@id='content']/p[text()!='']")
+        @content.nil? ? nil: self.extract(@content)
+      else
+        @summary = self.extract(@summary)
+      end
     end
 
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
@@ -34,7 +31,7 @@ module POI
           sleep(2)
           counter+=1
           puts "Encyclopedia content of #{landmark[:name]}"
-          content = self.content(landmark[:name]) || self.attemp(landmark[:name])
+          content = self.content(landmark[:name]) || self.content("#{landmark[:city_name]}#{landmark[:name]}")
           if content.nil? 
              puts "\e[31m Return nil\e[0m" 
           else
@@ -48,10 +45,15 @@ module POI
         self.insert(encyclopedia_item)
         end
       rescue =>e
-        msg = %Q(#{Time.now}  #{e} finished: #{counter} , unfinished: #{ dp_landmarks.size-counter }, Timeleft: #{(Time.now-timer)*counter/dp_landmarks.size}\n)
+        msg = %Q(#{Time.now}  #{e} finished: #{counter} , unfinished: #{ dp_landmarks.size-counter }, Timeleft: #{(Time.now-timer)*dp_landmarks.size/counter} seconds\n)
         self.log(msg)
         exit
       end
+    end
+
+    # Extract text from content
+    def extract(doc)
+      doc.traverse { |node|  node.text.strip.gsub(/\s+/, "") }
     end
 
    # Insert each item to database
@@ -60,11 +62,12 @@ module POI
       existed.nil? ? Db::BasePoiEncyclopedia.new(item).save : existed.update(item)
     end
     
+
    # Process the landmark as keyword ,for example:上海广场（原无限度）--> 上海广场,
    # Encode the url 
-    def url(base_uri,landmark)
+    def url(landmark)
       landmark = landmark.gsub(/（.+）/,'')
-      URI::encode "#{base_uri}#{landmark}"
+      URI::encode "#{BASE_URL}#{landmark}"
     end
 
    # log msg
