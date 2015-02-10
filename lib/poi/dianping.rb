@@ -1,9 +1,13 @@
+module Db
+  class DianpingPoi < ActiveRecord::Base
+  end
+end
+
 module POI
   class Dianping
-    extend POI
 
    # City list from `http://www.dianping.com/citylist`
-    def self.cities
+    def cities
       web_page = Nokogiri::HTML(open(URI('http://www.dianping.com/citylist')))
       internal_cities = web_page.at("//ul[@class='glossary-list gl-region Hide']")
       city_set = []
@@ -14,7 +18,7 @@ module POI
     end
 
     # Fetching pois of each city_id
-    def self.pois(city_id)
+    def pois(city_id)
       url = "http://www.dianping.com/shopall/#{city_id}/0"
       web_page = Nokogiri::HTML open URI(url)
 
@@ -41,10 +45,72 @@ module POI
       end
       pois
     end
-  end
-end
 
-module Db
-  class DianpingPoi < ActiveRecord::Base
+   # log msg
+    def log(msg)
+      log_file = File.open("dianping.log", "a+")
+      log_file.syswrite(msg)
+      log_file.close
+    end
+
+    def producer(city_id, pipeline, redis)
+      city_num  = self.cities.size
+      timer = Time.now 
+      until city_id > city_num do
+          # Sleep for 2 second
+          sleep(2)
+          limiter = 0
+          begin
+            pois = self.pois(city_id)
+            pois.each do |poi|
+              pipeline.push(poi)
+            end
+            puts "Processing city_id: #{city_id} finished!"
+
+          # Exception handler
+          rescue =>e
+            limiter+=1
+            retry if limiter<3
+            p e
+            warn "\e[31mError encountered when processing city_id: #{city_id}\e[0m"
+            case e
+              when ArgumentError
+                msg = %Q(#{Time.now} #{e} when visiting http://www.dianping.com/shopall/#{city_id}/0".\n)
+                self.log(msg)
+                city_num+=1
+              when Errno
+                next
+              when OpenURI::HTTPError
+                redis.set('city_stuck', city_id)
+                msg = %Q(#{Time.now} #{e} finished: #{city_id}, unfinished: #{ city_num-city_id }, Timeleft: #{((Time.now-timer)*city_num/city_id).to_i} seconds.\n)
+                self.log(msg)
+                exit
+              else
+                exit
+            end
+          end
+          city_id+=1
+        end
+      redis.set('city_stuck', 1)
+      abort "\e[32m Works finished!\e[0m"
+    end
+
+    def consumer(pipeline)
+      # Wait for producer
+      sleep(2)
+      while true
+        begin
+          item = pipeline.pop
+          existed_item = Db::DianpingPoi.find_by(center_id: item[:center_id], city_id: item[:city_id], name: item[:name])
+          existed_item.nil? ? Db::DianpingPoi.new(item).save : existed_item.update(item)
+          # adaptive wrting rate
+          sleep(1.0/(pipeline.length+1))
+        rescue => e
+          p e
+         self.log(%Q(#{Time.now} #{e}\n))
+        end
+      end
+    end
+
   end
 end

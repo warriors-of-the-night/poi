@@ -83,13 +83,13 @@ module POI
               if e.message=="404 Not Found"
                 next
               else
-                msg = %Q(#{Time.now}  #{e} finished: #{city_id} , unfinished: #{ @cities.size-city_id }, Timeleft: #{(Time.now-timer)*city_id/@cities.size} seconds\n)
+                msg = %Q(#{Time.now} #{e} finished: #{city_id}, unfinished: #{ @cities.size-city_id }, Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n)
                 self.log(msg)
                 redis.set('hospital_stuck', city_id)
                 exit
               end
             else
-              self.log(%Q(#{Time.now}  #{e} \n))
+              self.log(%Q(#{Time.now} #{e} \n))
           end
         end
         city_id+=1
@@ -110,7 +110,7 @@ module POI
           sleep(1.0/(pipeline.length+1))
         rescue => e
           p e
-          self.log(%Q(#{Time.now}  #{e}\n))
+          self.log(%Q(#{Time.now} #{e}\n))
         end
       end
     end
