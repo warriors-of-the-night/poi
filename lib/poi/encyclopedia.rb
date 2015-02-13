@@ -9,7 +9,8 @@ module POI
   class Encyclopedia
     BASE_URL = 'http://www.baike.com/wiki/'
    # Extract text from content
-    def extract(doc)
+    def extract(doc=nil)
+      return "" if doc.nil?
       doc.traverse { |node|  node.text.strip.gsub(/\s+/, "") }
     end
 
@@ -36,19 +37,27 @@ module POI
    # Encyclopedia content of landmark
     def content(landmark)
       @html = Nokogiri::HTML open(self.url(landmark))
-      summary = @html.at("//div[@class='summary']/p[text()!='']")
-      if summary.nil?
-        @para = @html.at("//div[@id='content']/p[text()!='']")
-        @content = @para.nil? ? nil: self.extract(@para)
-      elsif summary.text.strip.size<100
-        @para = @html.at("//div[@id='content']/p[text()!='']")
-        @content = @para.nil? ? self.extract(summary) : self.extract(summary)+self.extract(@para)
+      @content = @html.at("//div[@id='content']")
+      return nil if @content.nil?
+      @summary = @html.at("//div[@class='summary']/p[text()!='']")
+      if @summary.nil? or @summary.text.strip.size<100
+        content_h2 = ''
+        @content.search("p[text()!='']").each do |para|      
+          content_h2 = self.extract(para)
+          break if content_h2.size > 50
+        end
+        if content_h2==''
+          @html.xpath("//div[@id='content']/text()").each do |para|
+            content_h2 = para.text
+            break if content_h2.size > 50
+          end
+        end
+        self.extract(@summary)+content_h2
       else
-         @content = self.extract(summary)
+        self.extract(@summary)
       end
-      @content
     end
-
+    
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def process
       begin
