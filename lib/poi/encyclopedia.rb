@@ -11,7 +11,7 @@ module POI
    # Extract text from content
     def extract(doc=nil)
       return "" if doc.nil?
-      doc.traverse { |node|  node.text.strip.gsub(/\s+/, "") }
+      doc.traverse { |node|  node.text.gsub(/\s|　/, "") }
     end
 
    # Insert each item to database
@@ -36,7 +36,7 @@ module POI
 
    # Encyclopedia content of landmark
     def content(landmark)
-      @html = Nokogiri::HTML open(self.url(landmark))
+      @html    = Nokogiri::HTML open(self.url(landmark))
       @content = @html.at("//div[@id='content']")
       return nil if @content.nil?
       @summary = @html.at("//div[@class='summary']/p[text()!='']")
@@ -61,11 +61,11 @@ module POI
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def process
       begin
-        timer = Time.now
-        counter = 0
+        timer        = Time.now
+        counter      = 0
         dp_landmarks = Db::DianpingPoi.where(cata: 'landmark')
         dp_landmarks.find_each do |landmark|
-          sleep(2)
+          sleep(3*rand(0.0..1.0))  # change this if necessary
           counter+=1
           puts "Encyclopedia content of #{landmark[:name]}"
           content = self.content(landmark[:name]) || self.content("#{landmark[:city_name]}#{landmark[:name]}")
@@ -74,15 +74,15 @@ module POI
           else
              puts "\e[32m Content: #{content[0..20]}...\e[0m"
           end
-          encyclopedia_item = {
-              :name=>landmark[:name], 
-              :city=>landmark[:city_name],
-              :content=>content
+          encyclopedia_item =  {
+              :name         => landmark[:name], 
+              :city         => landmark[:city_name],
+              :content      => content
             }
         self.insert(encyclopedia_item)
         end
-      rescue =>e
-        msg = %Q(#{Time.now} #{e} finished: #{counter}, unfinished: #{ dp_landmarks.size-counter }, Timeleft: #{((Time.now-timer)*dp_landmarks.size/counter).to_i} seconds.\n)
+      rescue => e
+        msg  = %Q(#{Time.now} #{e} finished: #{counter}, unfinished: #{ dp_landmarks.size-counter }, Timeleft: #{((Time.now-timer)*dp_landmarks.size/counter).to_i} seconds.\n)
         self.log(msg)
         exit
       end
@@ -90,7 +90,7 @@ module POI
 
    # Html content for debug reason
     def html
-      @html
+      @html.to_html
     end
   end
 end
