@@ -2,7 +2,6 @@ require 'nokogiri'
 require 'open-uri'
 require 'socket'
 require 'active_record'
-
 # require sub classes
 require 'poi/school'
 require 'poi/expo'
@@ -11,6 +10,7 @@ require 'poi/venue'
 require 'poi/dianping'
 require 'poi/hospital'
 require 'poi/encyclopedia'
+require 'poi/landmark'
 module POI
   def request( url )
     """

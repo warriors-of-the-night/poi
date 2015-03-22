@@ -15,3 +15,10 @@ require './tasks/baidumap'
 require './tasks/dianping'
 require './tasks/hospital'
 require './tasks/encyclopedia'
+namespace :poi do
+	desc " crawl landmarks data from website"
+		task :landmark do 
+			POI::LandMark.work(ENV[:cp])
+		end
+end
+
