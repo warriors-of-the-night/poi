@@ -15,7 +15,8 @@ require './tasks/encyclopedia'
 namespace :poi do
   desc " Fetch landmarks data from web,For example: rake poi:landmark cp=meituan"
 		task :landmark do 
-			POI::LandMark.work(ENV['cp'], ENV['ak']='uPpVFGTNR9ke9GHxswi4OeHg')
+      worker = POI::LandMark::Worker.new(ENV['cp'])
+      worker.work
 		end 
 end
 
