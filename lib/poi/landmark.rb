@@ -41,13 +41,14 @@ module POI
           end
         rescue=>e
           p e
+          next
         end
       }
     end
 
     def self.consumer 
       Thread.new {
-        while @pduer.status or PIPE.length>0 do 
+        while @pduer.status or @pipe.length>0 do 
           item =  @pipe.pop
           puts item
           existed = Db::BasePoiLandmark.find_by(name: item[:name], city_cn: item[:city_cn], source_domain: item[:source_domain])
