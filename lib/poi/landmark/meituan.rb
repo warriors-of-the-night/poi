@@ -11,13 +11,14 @@ module POI
         @page =  Nokogiri::HTML HTTParty.get("#{@base_url}?cityid=#{city[:city_id]}", @options)
         collections = {}
         page_number.times do |page_id|
+        	puts "Fetching centers from page : #{page_id}"
           unless page_id==0
             url   =  "#{@base_url}?cityid=#{city[:city_id]}&page=#{page_id+1}"
-            @page =  Nokogiri::HTML  HTTParty.get(url, @options)
+            @page =  Nokogiri::HTML HTTParty.get(url, @options)
           end
           @page.search('//body/li').each do |li|
             li.at_css('a').text.gsub(/】|【/,'').split('/').each { |name|
-              collections[name] = {:source_domain =>'meituan.com',:cata=>'center'}.merge(city)
+              collections[name] = {:source_domain =>'meituan.com',:cata=>'center'}.merge(city) if !collections.has_key?('name')
             }
           end
         end
@@ -26,7 +27,7 @@ module POI
   
       def page_number
         last_page = @page.at('//ul[@class="paginator"]/li[@class="last"]/a')
-        last_page.nil? ? 0 : last_page['href'][/\d+/].to_i
+        last_page.nil? ? 0 : last_page['href'][/(?<=page=)\d+/].to_i
       end
 
     
