@@ -11,7 +11,7 @@ module POI
         @page =  Nokogiri::HTML HTTParty.get("#{@base_url}?cityid=#{city[:city_id]}", @options)
         collections = {}
         page_number.times do |page_id|
-        	puts "Fetching centers from page : #{page_id}"
+          puts "Fetching centers of #{city[:city_cn]} from page: #{page_id}..."
           unless page_id==0
             url   =  "#{@base_url}?cityid=#{city[:city_id]}&page=#{page_id+1}"
             @page =  Nokogiri::HTML HTTParty.get(url, @options)
@@ -21,6 +21,7 @@ module POI
               collections[name] = {:source_domain =>'meituan.com',:cata=>'center'}.merge(city) if !collections.has_key?('name')
             }
           end
+          puts "\e[32mFinished!\e[0m"
         end
         collections
       end
@@ -32,7 +33,7 @@ module POI
 
     
       def city_list
-        html = Nokogiri::HTML HTTParty.get('http://www.meituan.com/sitemap/citysitemap.php',@options)
+        html = Nokogiri::HTML HTTParty.get('http://www.meituan.com/sitemap/citysitemap.php', @options)
         city_list_html = html.search('//body/li/a')
 
         @city_list = city_list_html.map do |city|

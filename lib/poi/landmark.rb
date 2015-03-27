@@ -4,10 +4,8 @@ require_relative 'landmark/baidu_waimai'
 require_relative 'landmark/dianping'
 module Db
   class BasePoiLandmark < ActiveRecord::Base
-
   end
   class BaseElongHotelCity < ActiveRecord::Base
-
   end
 end
 module POI
@@ -20,47 +18,51 @@ module POI
                 L7oWwVgcqzz9ZTGsfwlftI0o)
 
       def initialize(web_site)
-        @index    = 0
-        @geocoder = Baidumap::Request::Geocoder.new(Keys[@index])
-        @cp       = {
+        @cp           = {
           :meituan      => MeiTuan,
           :baidu_waimai => BaiduWaimai,
           :dianping     => DianPing,
         } 
-        @crawler  = @cp[web_site.to_sym].new
+        @index        =  0
+        @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@index])
+        @crawler      =  @cp[web_site.to_sym].new
+        @landmarks    =  Db::BasePoiLandmark
+        @elong_cities =  Db::BaseElongHotelCity
       end 
 
       def producer
         Thread.new {
           city_list = @crawler.city_list
           city_list.each do |city|
-            elong_city = Db::BaseElongHotelCity.find_by(NameShort: city[:city_cn])
-            @crawler.landmarks(city).each do |name, city_info|
+            elong_city = @elong_cities.find_by(NameShort: city[:city_cn])
+            pois       = @crawler.landmarks(city)
+            pois.each do |name, city_info|
+              puts "Fetching center: #{name}'s location in #{city_info[:city_cn]}"
               begin
-                geo_coordinate = @geocoder.encode(name, city_info[:city_cn]).result
-
-                if geo_coordinate.nil?
-                  @geocoder = change_key  # change_key if quota runs out
+                geo_crd  = @geocoder.encode(name, city_info[:city_cn]).result
+                location = {}
+                if geo_crd.nil?
+                  @geocoder = change_key  # change_key if quotas runs out
                   redo   
-                elsif geo_coordinate.empty?
-                  lng_lat, geo_details = {}, {'addressComponent'=>{}}
-                else
-                  lng_lat     = geo_coordinate['location']
-                  geo_details = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
+                elsif !geo_crd.empty?
+                  lng_lat   = geo_crd['location']
+                  geo_dtls  = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
+                  if geo_dtls['addressComponent']['city'].include?(city_info[:city_cn])
+                    location = {
+                      :lng      => lng_lat['lng'],
+                      :lat      => lng_lat['lat'],
+                      :address  => geo_dtls['formatted_address'],
+                      :province => geo_dtls['addressComponent']['province'],
+                    }
+                  end
                 end
-
-                @pipe<<{
-                  :name          => name,
-                  :elong_city_id => elong_city.nil? ? '0' : elong_city[:Code],
-                  :lng           => lng_lat['lng'],
-                  :lat           => lng_lat['lat'],
-                  :province      => geo_details['addressComponent']['province'],
-                  :address       => geo_details['formatted_address'],
-                }.merge(city_info)
-                puts "\e[32m #{name}"
+                @pipe << {
+                          :name          => name,
+                          :elong_city_id => elong_city.nil? ? '0000' : elong_city[:Code],
+                         }.merge(city_info).merge(location)
+                puts "\e[32mFinished!\e[0m"
               rescue=>e
                 warn e
-                puts geo_coordinate
                 next
               end
             end
@@ -70,11 +72,15 @@ module POI
 
       def consumer 
         Thread.new {
+          begin
           while @pduer.status or @pipe.length>0 do 
             row     =  @pipe.pop
-            existed = Db::BasePoiLandmark.find_by(name: row[:name], city_cn: row[:city_cn], source_domain: row[:source_domain])
-            existed.nil? ? Db::BasePoiLandmark.new(row).save : existed.update(row)
+            existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
+            existed.nil? ? @landmarks.new(row).save : existed.update(row)
             sleep(1/(@pipe.length+1))
+          end
+          rescue=>e
+            warn e
           end
         }
       end
