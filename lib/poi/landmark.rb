@@ -2,6 +2,7 @@ require 'httparty'
 require_relative 'landmark/meituan'
 require_relative 'landmark/baidu_waimai'
 require_relative 'landmark/dianping'
+require_relative 'landmark/elong_flight'
 module Db
   class BasePoiLandmark < ActiveRecord::Base
   end
@@ -22,6 +23,7 @@ module POI
           :meituan      => MeiTuan,
           :baidu_waimai => BaiduWaimai,
           :dianping     => DianPing,
+          :elong_flight => ElongFlight,
         } 
         @index        =  0
         @pipe         =  Queue.new
@@ -38,29 +40,14 @@ module POI
             elong_city = @elong_cities.find_by(NameShort: city[:city_cn])
             pois       = @crawler.landmarks(city)
             pois.each do |name, city_info|
-              puts "Fetching center: #{name}'s location in #{city_info[:city_cn]}"
+              puts "Fetching pois: #{name}'s location, type: #{city_info[:cata]}, city: #{city_info[:city_cn]}"
               begin
-                geo_crd  = @geocoder.encode(name, city_info[:city_cn]).result
-                location = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
-                if geo_crd.nil?
-                  @geocoder = change_key  # change_key if quotas runs out
-                  redo   
-                elsif !geo_crd.empty?
-                  lng_lat   = geo_crd['location']
-                  geo_dtls  = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
-                  if geo_dtls['addressComponent']['city'].include?(city_info[:city_cn])
-                    location = {
-                      :lng      => lng_lat['lng'],
-                      :lat      => lng_lat['lat'],
-                      :address  => geo_dtls['formatted_address'],
-                      :province => geo_dtls['addressComponent']['province'],
-                    }
-                  end
-                end
+                addrs = location(name, city_info)
+                redo if addrs.nil?
                 @pipe << {
-                          :name          => name,
-                          :elong_city_id => elong_city.nil? ? '0000' : elong_city[:Code],
-                         }.merge(city_info).merge(location)
+                  :name          => name,
+                  :elong_city_id => elong_city.nil? ? '0000' : elong_city[:Code],
+                }.merge(city_info).merge(addrs)
                 puts "\e[32mFinished!\e[0m"
               rescue=>e
                 warn e
@@ -91,15 +78,44 @@ module POI
         @writer = consumer
         @pduer.join
         @writer.join
-        abort( "Finished!")
+        abort( "Congratulation! All things Finished.")
       end 
 
+      def check_city(geo_dtls, city)
+        addr  = geo_dtls['addressComponent']
+        [addr['city'], addr['district']].any? {|ad| ad.include?(city) }
+      end
+
+      def location(name, city)
+        addr_dtls = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
+        geo_crd   = @geocoder.encode(name, city[:city_cn]).result
+
+        if geo_crd.nil?
+          @geocoder = change_key  # change_key if quotas runs out
+          return nil  
+        elsif !geo_crd.empty?
+          lng_lat   = geo_crd['location']
+          geo_dtls  = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
+
+          if check_city(geo_dtls,city[:city_cn])
+            addr_dtls = {
+              :lng      => lng_lat['lng'],
+              :lat      => lng_lat['lat'],
+              :address  => geo_dtls['formatted_address'],
+              :province => geo_dtls['addressComponent']['province'],
+            }
+          end
+        end
+        addr_dtls
+      end
+       
       # Change key
       def change_key
         @index+=1
         raise "No more keys remains." if @index>=Keys.length
         @geocoder = Baidumap::Request::Geocoder.new(Keys[@index])
       end
+
     end
   end
 end
