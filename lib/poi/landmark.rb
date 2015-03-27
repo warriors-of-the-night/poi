@@ -40,7 +40,7 @@ module POI
               puts "Fetching center: #{name}'s location in #{city_info[:city_cn]}"
               begin
                 geo_crd  = @geocoder.encode(name, city_info[:city_cn]).result
-                location = {}
+                location = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
                 if geo_crd.nil?
                   @geocoder = change_key  # change_key if quotas runs out
                   redo   
