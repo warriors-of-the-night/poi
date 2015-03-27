@@ -24,6 +24,7 @@ module POI
           :dianping     => DianPing,
         } 
         @index        =  0
+        @pipe         =  Queue.new
         @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@index])
         @crawler      =  @cp[web_site.to_sym].new
         @landmarks    =  Db::BasePoiLandmark
@@ -86,7 +87,6 @@ module POI
       end
 
       def work
-        @pipe   = Queue.new
         @pduer  = producer
         @writer = consumer
         @pduer.join
