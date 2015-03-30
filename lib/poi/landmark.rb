@@ -4,6 +4,7 @@ require_relative 'landmark/baidu_waimai'
 require_relative 'landmark/dianping'
 require_relative 'landmark/elong_flight'
 require_relative 'landmark/train'
+require_relative 'landmark/metro'
 module Db
   class BasePoiLandmark < ActiveRecord::Base
   end
@@ -26,6 +27,7 @@ module POI
           :dianping     => DianPing,
           :elong_flight => ElongFlight,
           :train        => Train,
+          :metro        => Metro,
         } 
         @index        =  0
         @pipe         =  Queue.new
