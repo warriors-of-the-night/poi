@@ -55,6 +55,7 @@ module POI
                 puts "\e[32mFinished!\e[0m"
               rescue=>e
                 warn e
+                warn e.backtrace
                 next
               end
             end
