@@ -76,6 +76,7 @@ module POI
           end
           rescue=>e
             warn e
+            warn e.backtrace
           end
         }
       end
