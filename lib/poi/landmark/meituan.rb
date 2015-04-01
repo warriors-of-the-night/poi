@@ -8,11 +8,11 @@ module POI
       end
 
       def landmarks(city)
-        @page =  Nokogiri::HTML HTTParty.get("#{@base_url}?cityid=#{city[:city_id]}", @options)
+        @page       =  Nokogiri::HTML HTTParty.get("#{@base_url}?cityid=#{city[:city_id]}", @options)
         collections = {}
-        page_number.times do |page_id|
-          unless page_id==0
-            url   =  "#{@base_url}?cityid=#{city[:city_id]}&page=#{page_id+1}"
+        1.upto(page_number) do |page_id|
+          unless page_id==1
+            url   =  "#{@base_url}?cityid=#{city[:city_id]}&page=#{page_id}"
             @page =  Nokogiri::HTML HTTParty.get(url, @options)
           end
           @page.search('//body/li').each do |li|
@@ -26,7 +26,12 @@ module POI
   
       def page_number
         last_page = @page.at('//ul[@class="paginator"]/li[@class="last"]/a')
-        last_page.nil? ? 0 : last_page['href'][/(?<=page=)\d+/].to_i
+        if last_page 
+         last_page['href'][/(?<=page=)\d+/].to_i
+        else
+          page_nav_size  = @page.search('//ul[@class="paginator"]/li').size
+          page_nav_size>1 ? page_nav_size-1 : 1
+        end
       end
 
     
