@@ -19,7 +19,7 @@ module POI
             url    =  "http://www.mafengwo.cn/jd/#{city_id}/0-0-0-0-0-#{i}.html"
             @page  =  Nokogiri::HTML HTTParty.get(url).body
             poi_ls =  @page.search('//ul[@class="poi-list"]/li/div[@class="title"]/h3/a')
-            poi_ls.each { |poi| ats[poi.text] = base_info }
+            poi_ls.each { |poi| ats[poi.text.to_s.gsub(/[\(（].*[\)）]/,'')] = base_info }
           end
         end
         ats
