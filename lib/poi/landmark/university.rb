@@ -15,7 +15,8 @@ module POI
             @page = Nokogiri::HTML HTTParty.get(url).body
           end
           @page.search('//table/tr/td/table/tr/td/a').each { |univ|
-            universities[univ.text.to_s.gsub(/\(.*\)/,'')] = {:source_domain=>'ziyuan.eol.cn',:cata=>'university'}
+            name = univ.text.to_s.gsub(/[（\(].*[\)）]/,'')
+            universities[name] = {:source_domain=>'ziyuan.eol.cn',:cata=>'university'} if name!=' '
           }
         end
         universities
