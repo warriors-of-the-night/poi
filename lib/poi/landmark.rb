@@ -43,23 +43,23 @@ module POI
 
       def producer
         Thread.new {
-          city_list = @crawler.city_list
+          city_list   = @crawler.city_list 
           city_list.each do |city|
-            elong_city = @elong_cities.find_by(NameShort: city[:city_cn])
-            pois       = @crawler.landmarks(city)
+            city_cn     = city[:city_cn]
+            @elong_city = @elong_cities.find_by(NameShort: city_cn)
+            pois        = @crawler.landmarks(city)
             pois.each do |name, city_info|
               puts "Fetching pois: #{name}'s location, type: #{city_info[:cata]}, city: #{city_info[:city_cn]}"
               begin
-                addrs = location(name, city_info)
+                addrs = location(name, city_cn)
                 redo if addrs.nil?
                 @pipe << {
                   :name          => name,
-                  :elong_city_id => elong_city.nil? ? '0000' : elong_city[:Code],
+                  :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
                 puts "\e[32mFinished!\e[0m"
               rescue=>e
-                warn e
-                warn e.backtrace
+                warn "#{e}\n#{e.backtrace.join("\n")}"
                 next
               end
             end
@@ -77,8 +77,7 @@ module POI
             sleep(1/(@pipe.length+1))
           end
           rescue=>e
-            warn e
-            warn e.backtrace
+            warn "#{e}\n#{e.backtrace.join("\n")}"
             exit
           end
         }
@@ -94,29 +93,31 @@ module POI
 
       def check_city(geo_dtls, city)
         addr  = geo_dtls['addressComponent']
-        [addr['city'], addr['district']].any? {|ad| ad.include?(city) }
+        [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
       end
 
       def location(name, city)
         addr_dtls = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
-        geo_crd   = @geocoder.encode(name, city[:city_cn]).result
+        geo_crd   = @geocoder.encode(name, city).result
 
         if geo_crd.nil?
           @geocoder = change_key  # change_key if quotas runs out
-          return nil  
+          return
         elsif !geo_crd.empty?
           lng_lat   = geo_crd['location']
           geo_dtls  = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
 
-          if check_city(geo_dtls,city[:city_cn])
+          if check_city(geo_dtls, city)
             addr_dtls = {
               :lng      => lng_lat['lng'],
               :lat      => lng_lat['lat'],
+              :city_cn  => geo_dtls['addressComponent']['city'].gsub(/市$/,''),
               :address  => geo_dtls['formatted_address'],
               :province => geo_dtls['addressComponent']['province'],
             }
           end
         end
+        @elong_city = @elong_cities.find_by(NameShort: addr_dtls[:city_cn]) if addr_dtls[:city_cn]
         addr_dtls
       end
        
