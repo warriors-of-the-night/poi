@@ -117,7 +117,7 @@ module POI
             }
           end
         end
-        @elong_city = @elong_cities.find_by(NameShort: addr_dtls[:city_cn]) if addr_dtls[:city_cn]
+        @elong_city = @elong_cities.find_by(NameShort: addr_dtls[:city_cn]) unless city
         addr_dtls
       end
        
