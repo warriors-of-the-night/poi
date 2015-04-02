@@ -17,7 +17,7 @@ module POI
           end
           @page.search('//body/li').each do |li|
             li.at_css('a').text.gsub(/】|【/,'').split('/').each { |name|
-              collections[name] = {:source_domain =>'meituan.com',:cata=>'center'}.merge(city) if !collections.has_key?('name')
+              collections[name] = {:city_cn=>city[:city_cn],:source_domain=>'meituan.com',:cata=>'center'} if !collections.has_key?('name')
             }
           end
         end

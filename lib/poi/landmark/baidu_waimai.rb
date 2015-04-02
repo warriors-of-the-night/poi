@@ -16,20 +16,27 @@ module POI
           aoi.each { |center|
             city.delete(:isHaveAoi)          
             @aois[center['name']]= {
-                      :source_domain => 'waimai.baidu.com',
-                      :cata          => 'center',
-           #  				:city_en =>  city_en,
-            }.merge(city)
+              :city_cn       => city[:city_cn],
+              :source_domain => 'waimai.baidu.com',
+              :cata          => 'center',
+             #:city_en =>  city_en,
+            }
          }
         end
         @aois
       end
 
       def city_list
-        @page = Nokogiri::HTML HTTParty.get(@base_url, @options)
+        @page       = Nokogiri::HTML HTTParty.get(@base_url, @options)
         script_json = @page.at('//script[contains(text(),"city_list")]').text
         cities      = JSON.parse('{"city_list":' + script_json[/(?<="city_list":)(.*)(?=,"landing_cfg")/]+"}")
-        cities      = cities['city_list'].map { |city| {:city_id=>city['code'],:city_cn=>city['name'],:isHaveAoi=>city['isHaveAoi']} }
+        cities      = cities['city_list'].map { |city| 
+          {
+            :city_id=>city['code'],    
+            :city_cn  => city['name'],
+            :isHaveAoi=> city['isHaveAoi']
+          }
+        }
       end
       
       def html

@@ -7,7 +7,7 @@ module POI
       
       def landmarks(city)
         city_id   =  city[:city_id]
-        base_info =  { :cata=>'scene', :source_domain=>'mafengwo.cn'}.merge(city)
+        base_info =  {:city_cn=>city[:city_cn], :cata=>'scene', :source_domain=>'mafengwo.cn'}
         @gl_html  =  Nokogiri::HTML HTTParty.get("http://www.mafengwo.cn/jd/#{city_id}/gonglve.html").body
         pois      =  @gl_html.at_css('div.list')
         ats       =  {}

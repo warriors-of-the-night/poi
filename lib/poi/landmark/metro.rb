@@ -13,9 +13,10 @@ module POI
         lines.each do |line|
           line['stops'].each {  |stop|
             metros[stop['name']] = {
+              :city_cn       => city[:city_cn],
               :cata          => 'metro',
               :source_domain => 'map.baidu.com',
-            }.merge(city)
+            }
           }
         end
         metros

@@ -38,10 +38,11 @@ module POI
            # uri_split = poi['href'].split('/')    # An example of href just like "/search/category/4/0/r13880"
             poi.text.split('/').each do |name|
             pois[name]   = {  
+              :city_cn       => city[:city_cn],
               :cata          => type,
               :source_domain => 'dianping.com',
             # :center_id => uri_split[-1],
-            }.merge(city)
+            }
             end
           }
         end
