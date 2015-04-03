@@ -1,12 +1,9 @@
 require 'httparty'
-require_relative 'landmark/meituan'
-require_relative 'landmark/baidu_waimai'
-require_relative 'landmark/dianping'
-require_relative 'landmark/elong_flight'
-require_relative 'landmark/train'
-require_relative 'landmark/metro'
-require_relative 'landmark/scene'
-require_relative 'landmark/university'
+class_files = %w( landmark/meituan  landmark/baidu_waimai 
+                  landmark/dianping landmark/elong_flight
+                  landmark/train    landmark/metro 
+                  landmark/scene    landmark/university)
+class_files.each { |file| require_relative file }
 module Db
   class BasePoiLandmark < ActiveRecord::Base
   end
@@ -21,6 +18,7 @@ module POI
                 A5KusGlYIoejSBgLpgIO4ypH GG4XEskQdLZTT4ADvOjYcDmV PH5XOjTkT20Yx7YNtjczLyE3 ITRp7wngpB1aulNFgoryaRGG
                 uZIOFIRWBLptE04mHwNrMcAj N4BeVM6t7LTjjbDXHbDMMZkx Tlyg0gekTuqpUH6bMPLcsth9 2Rei7o9gbdqRLSGXeMHj5DNX
                 L7oWwVgcqzz9ZTGsfwlftI0o)
+                
 
       def initialize(web_site)
         @cp           = {
@@ -34,9 +32,12 @@ module POI
           :university   => University,
         } 
         @index        =  0
+        @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
+        @key          =  web_site
+        @counter      =  0
         @pipe         =  Queue.new
         @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@index])
-        @crawler      =  @cp[web_site.to_sym].new
+        @crawler      =  @cp[@key.to_sym].new
         @landmarks    =  Db::BasePoiLandmark
         @elong_cities =  Db::BaseElongHotelCity
       end 
@@ -44,7 +45,8 @@ module POI
       def producer
         Thread.new {
           city_list   = @crawler.city_list 
-          city_list.each do |city|
+            start     = get_rd(@key)
+            city_list.drop(start).each do |city|
             city_cn     = city[:city_cn]
             @elong_city = @elong_cities.find_by(NameShort: city_cn)
             pois        = @crawler.landmarks(city)
@@ -63,6 +65,7 @@ module POI
                 next
               end
             end
+            @counter+=1
           end
         }
       end
@@ -84,24 +87,25 @@ module POI
       end
 
       def work
-        @pduer  = producer
-        @writer = consumer
-        @pduer.join
-        @writer.join
+        begin 
+          @pduer  = producer
+          @writer = consumer
+          @pduer.join
+          @writer.join
+        rescue=>e
+          set_rd(@key,@counter)
+          exit
+        end
+        set_rd(@key)
         abort( "Congratulation! All things Finished.")
       end 
-
-      def check_city(geo_dtls, city)
-        addr  = geo_dtls['addressComponent']
-        [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
-      end
 
       def location(name, city)
         addr_dtls = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
         geo_crd   = @geocoder.encode(name, city).result
 
         if geo_crd.nil?
-          @geocoder = change_key  # change_key if quotas runs out
+          @geocoder = chg_api_key  # change baidumap api keys if quotas runs out
           return
         elsif !geo_crd.empty?
           lng_lat   = geo_crd['location']
@@ -121,11 +125,24 @@ module POI
         addr_dtls
       end
        
-      # Change key
-      def change_key
+      def chg_api_key
         @index+=1
         raise "No more keys remains." if @index>=Keys.length
         @geocoder = Baidumap::Request::Geocoder.new(Keys[@index])
+      end
+
+      def check_city(geo_dtls, city)
+        addr  = geo_dtls['addressComponent']
+        [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
+      end
+
+      def get_rd(key, init_value=0)
+        value = @redis.get(key)
+        value.nil? ? init_value : value.to_i
+      end
+
+      def set_rd(key,value=0)
+        @redis.set(key,value)
       end
 
     end
