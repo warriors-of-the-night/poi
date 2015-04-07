@@ -1,8 +1,9 @@
 require 'httparty'
-class_files = %w( landmark/meituan  landmark/baidu_waimai 
-                  landmark/dianping landmark/elong_flight
-                  landmark/train    landmark/metro 
-                  landmark/scene    landmark/university)
+class_files = %w( landmark/meituan   landmark/baidu_waimai 
+                  landmark/dianping  landmark/elong_flight
+                  landmark/train     landmark/metro 
+                  landmark/scene     landmark/university
+                  landmark/consulate landmark/embassy)
 class_files.each { |file| require_relative file }
 module Db
   class BasePoiLandmark < ActiveRecord::Base
@@ -30,6 +31,8 @@ module POI
           :metro        => Metro,
           :scene        => Scene,
           :university   => University,
+          :consulate    => Consulate,
+          :embassy      => Embassy,
         } 
         @index        =  0
         @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
