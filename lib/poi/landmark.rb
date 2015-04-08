@@ -3,7 +3,8 @@ class_files = %w( landmark/meituan   landmark/baidu_waimai
                   landmark/dianping  landmark/elong_flight
                   landmark/train     landmark/metro 
                   landmark/scene     landmark/university
-                  landmark/consulate landmark/embassy)
+                  landmark/consulate landmark/embassy
+                  landmark/baidu_lvyou)
 class_files.each { |file| require_relative file }
 module Db
   class BasePoiLandmark < ActiveRecord::Base
@@ -24,7 +25,7 @@ module POI
       def initialize(web_site)
         @cp           = {
           :meituan      => MeiTuan,
-          :baidu_waimai => BaiduWaimai,
+          :wm_baidu     => BaiduWaimai,
           :dianping     => DianPing,
           :elong_flight => ElongFlight,
           :train        => Train,
@@ -34,6 +35,7 @@ module POI
           :consulate    => Consulate,
           :embassy      => Embassy,
           :hospital     => POI::Hospital,
+          :ly_baidu     => BaiduLvyou,
         } 
         @index        =  0
         @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
@@ -97,6 +99,7 @@ module POI
           @pduer.join
           @writer.join
         rescue=>e
+          warn e
           set_rd(@key,@counter)
           exit
         end
