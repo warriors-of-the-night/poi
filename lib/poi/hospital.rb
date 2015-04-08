@@ -19,30 +19,47 @@ module POI
       @provinces
     end
 
-    def cities
+    def city_list
       @cities = []
       @provinces.each { |prov|
         cities = prov.next_element.next_element.xpath("./a")
         cities.each do |city|
-          @cities << { :province_name=>prov.text, :city_name=>city.text, :uri=>city['href'] }
+          @cities << { :province=>prov.text, :city_cn=>city.text, :uri=>city['href'] }
         end
       }
       @cities
     end
     
+
+    def landmarks(city)
+      url  = "#{BASE_URL}#{city[:uri]}"
+      html = Nokogiri::HTML open(url)
+      hosp_list = html.xpath("//ul/li/b/a")
+      hosps = {}
+      hosp_list.each do |hosp|
+        name = hosp.text
+        hosps[name] = {
+          :cata          => 'hospital',
+          :city_cn       => city[:city_cn],
+          :source_domain => 'a-hospital.com',
+        }
+      end
+      hosps
+    end
+
     def hosps(city)
       url = "#{BASE_URL}#{city[:uri]}"
       html = Nokogiri::HTML open(url)
       hosp_list = html.xpath("//ul/li/b/a")
       hosps = hosp_list.collect do |hosp|
-        self.fetch_info(hosp, city)  
+        fetch_info(hosp, city)
       end
       hosps
     end
 
     def fetch_info(hosp, city)
       list = hosp.xpath("./../../ul/li")
-      base_info  = { :name=>hosp.text, :province=>city[:province_name], :city=>city[:city_name] }
+      base_info  = { :name=>hosp.text, :province=>city[:province], :city=>city[:city_cn] }
       #website = list.at("./b[text()='医院网站']/..")
       #base_info[:homepage] = website.nil? ? nil : website.text.tr('医院网站：','')
       intros = { :level=>'医院等级', :mode=>'经营方式', :dep=>'重点科室', :address=>'医院地址', :phone=>'联系电话' }
@@ -62,12 +79,12 @@ module POI
 
     def producer(city_id, pipeline, redis)
       timer = Time.now 
-      self.cities.drop(city_id).each do |city|
+      city_list.drop(city_id).each do |city|
         sleep(2)    # Sleep for 2 second, change it if necessary
-        puts "Fetching hospitals of city: #{city[:province_name]}#{city[:city_name]} "
+        puts "Fetching hospitals of city: #{city[:province]}#{city[:city_cn]} "
         limiter = 0
         begin
-          hospitals = self.hosps(city)
+          hospitals = hosps(city)
           hospitals.each do |hosp|
             pipeline.push(hosp)
           end
@@ -77,7 +94,7 @@ module POI
           limiter+=1
           retry if limiter<3
           p e
-          warn "\e[31mError encountered when processing city: #{city[:city_name]}\e[0m"
+          warn "\e[31mError encountered when processing city: #{city[:city_cn]}\e[0m"
           case e
             when OpenURI::HTTPError
               if e.message=="404 Not Found"

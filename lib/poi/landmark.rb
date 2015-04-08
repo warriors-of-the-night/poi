@@ -33,6 +33,7 @@ module POI
           :university   => University,
           :consulate    => Consulate,
           :embassy      => Embassy,
+          :hospital     => POI::Hospital,
         } 
         @index        =  0
         @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
