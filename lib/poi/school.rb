@@ -13,13 +13,15 @@ module POI
 
     def self.schools_in_page( page_i, type = @type )
       url ="http://xuexiao.eol.cn/iframe/#{type}.php?page=#{page_i.to_s}"
-      html = request( url )
+     #html = request( url )
+      html = HTTParty.get(url).body
       page = Nokogiri::HTML( html )
 
       schools = []
       page.search("div[@class='list_sjk']").each do |div|
         school = {}        
-        h1 = div.search('h1') + div.search('h5')
+      # h1 = div.search('h1') + div.search('h5')
+        h1 = div.search('h1')[0]
         school[:name] = h1.text.strip
 
         begin
