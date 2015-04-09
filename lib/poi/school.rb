@@ -48,7 +48,7 @@ module POI
         lms[school[:name]] = {
           :cata          => self.class.type,
           :source_domain => 'xuexiao.eol.cn',
-          :address       => school[:address],
+          :address       => school[:address].strip,
         }
       end
       lms
