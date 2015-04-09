@@ -23,20 +23,24 @@ module POI
                 
 
       def initialize(web_site)
-        @cp           = {
-          :meituan      => MeiTuan,
-          :wm_baidu     => BaiduWaimai,
-          :dianping     => DianPing,
-          :elong_flight => ElongFlight,
-          :train        => Train,
-          :metro        => Metro,
-          :scene        => Scene,
-          :university   => University,
-          :consulate    => Consulate,
-          :embassy      => Embassy,
-          :hospital     => POI::Hospital,
-          :ly_baidu     => BaiduLvyou,
-        } 
+        @cp  = {
+          :meituan       => MeiTuan,
+          :wm_baidu      => BaiduWaimai,
+          :dianping      => DianPing,
+          :elong_flight  => ElongFlight,
+          :train         => Train,
+          :metro         => Metro,
+          :scene         => Scene,
+          :university    => University,
+          :consulate     => Consulate,
+          :embassy       => Embassy,
+          :ly_baidu      => BaiduLvyou,
+          :hospital      => POI::Hospital,
+          :high_school   => POI::School::High,
+          :middle_school => POI::School::Middle,
+          :elementary_school=> POI::School::Elementary,
+        }
+
         @index        =  0
         @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
         @key          =  web_site
@@ -64,7 +68,7 @@ module POI
                 @pipe << {
                   :name          => name,
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
-                }.merge(city_info).merge(addrs)
+                }.merge(addrs).merge(city_info)
                 puts "\e[32mFinished!\e[0m"
               rescue=>e
                 warn "#{e}\n#{e.backtrace.join("\n")}"

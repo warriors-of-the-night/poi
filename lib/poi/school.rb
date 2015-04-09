@@ -2,7 +2,7 @@ module POI
   class School
     
     extend POI
-
+    Mp = { 'mainxx' => 'elementary_school', 'maincz' => 'middle_school','main' => 'high_school'}
     def self.max_page_num( type = @type )
       url ="http://xuexiao.eol.cn/iframe/#{type}.php?page=1"
       html = request( url ) 
@@ -37,6 +37,30 @@ module POI
       end
     
       return schools
+    end
+    
+    def landmarks(city)
+      schools = self.class.schools_in_page(city[:page_id])
+      lms = {}
+      schools.each do |school|
+        lms[school[:name]] = {
+          :cata          => self.class.type,
+          :source_domain => 'xuexiao.eol.cn',
+          :address       => school[:address],
+        }
+      end
+      lms
+    end
+
+    def city_list
+      pg_nm = self.class.max_page_num 
+      1.upto(pg_nm).map { |i|
+        { :page_id => i}
+      }
+    end
+
+    def self.type
+      Mp[@type]
     end
 
     # deprecated, we do not need to enter the info page to get the address now
