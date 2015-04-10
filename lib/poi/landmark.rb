@@ -115,7 +115,7 @@ module POI
       def location(name, city_info)
         city      = city_info[:city_cn]
         addr_dtls = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
-        addr_arg  = city || city[:province]
+        addr_arg  = city || city_info[:province]
         geo_crd   = @geocoder.encode(name, addr_arg).result
 
         if geo_crd.nil?
