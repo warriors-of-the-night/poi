@@ -64,7 +64,7 @@ module POI
             pois.each do |name, city_info|
               puts "Fetching pois: #{name}'s location, type: #{city_info[:cata]}, city: #{city_info[:city_cn]}"
               begin
-                addrs = location(name, city_cn)
+                addrs = location(name, city_info)
                 redo if addrs.nil?
                 @pipe << {
                   :name          => name,
@@ -112,9 +112,11 @@ module POI
         abort( "Congratulation! All things Finished.")
       end 
 
-      def location(name, city)
+      def location(name, city_info)
+        city      = city_info[:city_cn]
         addr_dtls = {:lng=>nil,:lat=>nil,:address=>nil,:province=>nil}
-        geo_crd   = @geocoder.encode(name, city).result
+        addr_arg  = city || city[:province]
+        geo_crd   = @geocoder.encode(name, addr_arg).result
 
         if geo_crd.nil?
           @geocoder = chg_api_key  # change baidumap api keys if quotas runs out
