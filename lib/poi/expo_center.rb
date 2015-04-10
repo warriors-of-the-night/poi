@@ -3,6 +3,32 @@ module POI
 
     extend ::POI
 
+    def landmarks(prov)
+      @html = Nokogiri::HTML HTTParty.get(prov[:link]).body
+      pois  = @html.search('//div[@class="right_center_zi"]')
+      expos = {}
+      pois.each do |poi|
+        exp  = poi.at_css('a')
+        name = exp.text.strip
+        expos[name] = {
+          :cata          => 'expo',
+          :province      =>  prov[:province],
+          :source_domain => 'haozhanhui.com',
+        }
+      end
+      expos
+    end
+
+    def city_list
+      page     = Nokogiri::HTML( HTTParty.get('http://www.haozhanhui.com/exhplace.html').body) 
+      province = page.at('//div[@class="asfcz"]').search('./ul/li/a').map do |prov|
+        {
+          :province => prov.text,
+          :link     => prov['href']
+        }
+      end
+    end
+
     def self.get_center_ids()
       page = Nokogiri::HTML( request('http://www.haozhanhui.com/exhplace.html') ) 
       province_pages = []

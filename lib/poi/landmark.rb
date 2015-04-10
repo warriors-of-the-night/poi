@@ -39,6 +39,7 @@ module POI
           :high_school   => POI::School::High,
           :middle_school => POI::School::Middle,
           :elementary_school=> POI::School::Elementary,
+          :expo          => POI::ExpoCenter,
         }
 
         @index        =  0
