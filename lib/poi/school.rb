@@ -21,7 +21,7 @@ module POI
       page.search("div[@class='list_sjk']").each do |div|
         school = {}        
       # h1 = div.search('h1') + div.search('h5')
-        h1 = div.search('h1')[0]
+        h1 = div.at_css('h1') || div.at_css('h5')
         school[:name] = h1.text.strip
 
         begin
