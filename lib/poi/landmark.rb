@@ -69,7 +69,7 @@ module POI
                 @pipe << {
                   :name          => name,
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
-                }.merge(addrs).merge(city_info)
+                }.merge(city_info).merge(addrs)
                 puts "\e[32mFinished!\e[0m"
               rescue=>e
                 warn "#{e}\n#{e.backtrace.join("\n")}"
