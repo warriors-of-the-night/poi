@@ -62,27 +62,27 @@ module POI
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def producer
       Thread.new { 
-      start     = get_rd('lm_time_sk')
-      landmarks = @landmarks.where("updated_at>=?", start).order("id ASC")
-      begin
-        timer, counter = Time.now, 0
-        landmarks.find_each do |landmark|
+      start          =  get_rd('lm_time_sk')
+      landmarks      =  @landmarks.where("updated_at>=?", start).order("id ASC")
+      timer, counter =  Time.now, 0
+      landmarks.find_each do |landmark|
+        begin
           sleep(3*rand(0.0..1.0))              # change this if necessary
           counter+=1
-          puts "Encyclopedia content of #{landmark[:name]}"
+          puts "Crawling encyclopedia content of #{landmark[:name]}"
           elp_content = content(landmark[:name]) || content("#{landmark[:city_cn]}#{landmark[:name]}")
           encyclopedia =  {
             :name      => landmark[:name], 
             :city      => landmark[:city_cn],
-            :content   => content,
+            :content   => elp_content,
             }
           @pipe << encyclopedia
+        rescue => e
+          set_rd('lm_time_sk', landmark[:updated_at])
+          msg  = %Q(#{Time.now} #{e} finished: #{counter}, unfinished: #{landmarks.size-counter }, timeleft: #{((Time.now-timer)*landmarks.size/counter).to_i} seconds.\n)
+          log(msg)
+          exit
         end
-      rescue => e
-        set_rd('lm_time_sk', landmark[:updated_at])
-        msg  = %Q(#{Time.now} #{e} finished: #{counter}, unfinished: #{landmarks.size-counter }, timeleft: #{((Time.now-timer)*landmarks.size/counter).to_i} seconds.\n)
-        log(msg)
-        exit
       end
       set_rd('lm_time_sk')
       }
