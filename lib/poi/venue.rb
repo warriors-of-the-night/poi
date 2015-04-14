@@ -4,6 +4,27 @@ module POI
 
     extend POI
 
+    def landmarks(page_nb)
+      venues = self.class.venues_in_page(page_nb[:page_id])
+      lms = {}
+      venues.each { |venue|
+        name     = venue[:name].strip
+        lms[name]= {
+          :city_cn       => venue[:city],
+          :cata          => 'venue',
+          :source_domain => 'venue.damai.com',
+        }
+      }
+      lms
+    end
+
+    def city_list
+      pg_nb = self.class.max_page_num
+      1.upto(pg_nb).map do |id|
+        { :page_id => id }
+      end
+    end
+
     def self.max_page_num()
       url = "http://venue.damai.cn/search.aspx?cityID=0&k=0&keyword=&pageIndex=1"
       html =  request( url )

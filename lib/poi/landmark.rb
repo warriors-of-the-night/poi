@@ -21,9 +21,7 @@ module POI
                 uZIOFIRWBLptE04mHwNrMcAj N4BeVM6t7LTjjbDXHbDMMZkx Tlyg0gekTuqpUH6bMPLcsth9 2Rei7o9gbdqRLSGXeMHj5DNX
                 L7oWwVgcqzz9ZTGsfwlftI0o)
                 
-
-      def initialize(web_site)
-        @cp  = {
+       CP  = {
           :meituan       => MeiTuan,
           :wm_baidu      => BaiduWaimai,
           :dianping      => DianPing,
@@ -40,15 +38,17 @@ module POI
           :middle_school => POI::School::Middle,
           :elementary_school=> POI::School::Elementary,
           :expo          => POI::ExpoCenter,
+          :venue         => POI::Venue,
         }
 
-        @index        =  0
+      def initialize(web_site) 
+        @idx_of_keys  =  0
+        @counter      =  0
         @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
         @key          =  web_site
-        @counter      =  0
         @pipe         =  Queue.new
-        @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@index])
-        @crawler      =  @cp[@key.to_sym].new
+        @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@idx_of_keys])
+        @crawler      =  CP[@key.to_sym].new
         @landmarks    =  Db::BasePoiLandmark
         @elong_cities =  Db::BaseElongHotelCity
       end 
@@ -56,8 +56,8 @@ module POI
       def producer
         Thread.new {
           city_list   = @crawler.city_list 
-            start     = get_rd(@key)
-            city_list.drop(start).each do |city|
+            @start    = get_rd(@key)
+            city_list.drop(@start).each do |city|
             city_cn     = city[:city_cn]
             @elong_city = @elong_cities.find_by(NameShort: city_cn)
             pois        = @crawler.landmarks(city)
@@ -104,8 +104,8 @@ module POI
           @pduer.join
           @writer.join
         rescue=>e
-          warn e
-          set_rd(@key,@counter)
+          warn "#{e}\n#{e.backtrace.join("\n")}"
+          set_rd(@key,@counter+@start)
           exit
         end
         set_rd(@key)
@@ -140,9 +140,9 @@ module POI
       end
        
       def chg_api_key
-        @index+=1
-        raise "No more keys remains." if @index>=Keys.length
-        @geocoder = Baidumap::Request::Geocoder.new(Keys[@index])
+        @idx_of_keys+=1
+        raise "No more keys remains." if @idx_of_keys>=Keys.length
+        @geocoder = Baidumap::Request::Geocoder.new(Keys[@idx_of_keys])
       end
 
       def check_city(geo_dtls, city)
