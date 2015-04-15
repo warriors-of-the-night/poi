@@ -112,13 +112,13 @@ module POI
       @html.to_html
     end
 
-    def get_rd(key, init_value=0)
+    def get_rd(key)
       value = @redis.get(key)
-      value.nil? ? init_value : value.to_i
+      value.nil? ? Time.at(0) : Time.parse(value)
     end
 
     def set_rd(key,value=0)
-      @redis.set(key, value)
+      @redis.set(key, Time.at(value))
     end
 
   end

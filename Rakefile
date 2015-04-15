@@ -3,6 +3,7 @@ require "bundler/gem_tasks"
 require './lib/poi'
 require 'thread'
 require 'redis'
+require 'time'
 # shading
 
 # TASKS
