@@ -119,16 +119,10 @@ module POI
       # Wait for producer
       sleep(2)
       while true
-        begin
-          item = pipeline.pop
-          existed_item = Db::BasePoiHospital.find_by(name: item[:name], city: item[:city])
-          existed_item.nil? ? Db::BasePoiHospital.new(item).save : existed_item.update(item)
-          # adaptive wrting rate
-          sleep(1.0/(pipeline.length+1))
-        rescue => e
-          p e
-          self.log(%Q(#{Time.now} #{e}\n))
-        end
+        item = pipeline.pop
+        existed_item = Db::BasePoiHospital.find_by(name: item[:name], city: item[:city])
+        existed_item.nil? ? Db::BasePoiHospital.new(item).save : existed_item.update(item)
+        sleep(1.0/(pipeline.length+1))
       end
     end
 
