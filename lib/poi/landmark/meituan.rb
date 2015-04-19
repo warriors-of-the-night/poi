@@ -39,14 +39,15 @@ module POI
         html = Nokogiri::HTML HTTParty.get('http://www.meituan.com/sitemap/citysitemap.php', @options)
         city_list_html = html.search('//body/li/a')
 
-        @city_list = city_list_html.map do |city|
+        @city_list = []
+        city_list_html.each do |city|
           city_cn  = city.text.gsub(/网页地图/,'')
         # city_en  = PinYin.sentence(city_cn).gsub(/\s/,'')
-          {
-            :city_id => city['href'][/\d+/], 
+        @city_list << {
+          :city_id => city['href'][/\d+/], 
           # :city_en => city_en, 
-            :city_cn => city_cn
-          }
+          :city_cn => city_cn
+          } unless city_cn=='全国'
         end
       end
 
