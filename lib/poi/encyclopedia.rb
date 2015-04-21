@@ -64,13 +64,13 @@ module POI
       Thread.new { 
       start      =  get_rd('lm_time_sk')
       landmarks  =  @landmarks.where("updated_at>=?", start).order("id ASC")
-      @all_amount= landmark.size
+      @all_amount= landmarks.size
       @timer, @counter =  Time.now, 0
       landmarks.find_each do |landmark|
         @landmark = landmark
         begin
           sleep(3*rand(0.0..1.0))              # change this if necessary
-          counter+=1
+          @counter+=1
           puts "Crawling encyclopedia content of #{landmark[:name]}"
           elp_content = content(landmark[:name]) || content("#{landmark[:city_cn]}#{landmark[:name]}")
           encyclopedia =  {
@@ -105,14 +105,14 @@ module POI
         @writer = consumer
         @pduer.join
         @writer.join
-      rescue=>e
+      rescue Interrupt=>e
         error_handler e
       end
     end
 
-    def error_handler(e, len=@all_amount)
+    def error_handler(e, c=@counter, len=@all_amount)
       set_rd('lm_time_sk', @landmark[:updated_at])
-      msg  = %Q(#{Time.now} #{e.class} #{e.message} finished: #{@counter}, unfinished: #{len-@counter}, timeleft: #{((Time.now-@timer)*len/@counter).to_i} seconds.\n)
+      msg  = %Q(#{Time.now} #{e.class} #{e.message} finished: #{c}, unfinished: #{len-c}, timeleft: #{((Time.now-@timer)*len/c).to_i} seconds.\n)
       log(msg)
       exit
     end
