@@ -10,10 +10,10 @@ module POI
     BASE_URL = 'http://www.baike.com/wiki/'
 
     def initialize
-      @landmarks    = Db::BasePoiLandmark
-      @encyclopedia = Db::BasePoiEncyclopedia
-      @redis        = Redis.new(:host=>"127.0.0.1", :port=>6379)
-      @pipe         = Queue.new
+      @landmarks    =   Db::BasePoiLandmark
+      @encyclopedia =   Db::BasePoiEncyclopedia
+      @redis        =   Redis.new(:host=>"127.0.0.1", :port=>6379)
+      @pipe         =   Queue.new
     end
 
    # Extract text from content
@@ -62,10 +62,12 @@ module POI
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def producer
       Thread.new { 
-      start          =  get_rd('lm_time_sk')
-      landmarks      =  @landmarks.where("updated_at>=?", start).order("id ASC")
-      timer, counter =  Time.now, 0
+      start      =  get_rd('lm_time_sk')
+      landmarks  =  @landmarks.where("updated_at>=?", start).order("id ASC")
+      @all_amount= landmark.size
+      @timer, @counter =  Time.now, 0
       landmarks.find_each do |landmark|
+        @landmark = landmark
         begin
           sleep(3*rand(0.0..1.0))              # change this if necessary
           counter+=1
@@ -78,10 +80,7 @@ module POI
             }
           @pipe << encyclopedia
         rescue => e
-          set_rd('lm_time_sk', landmark[:updated_at])
-          msg  = %Q(#{Time.now} #{e} finished: #{counter}, unfinished: #{landmarks.size-counter }, timeleft: #{((Time.now-timer)*landmarks.size/counter).to_i} seconds.\n)
-          log(msg)
-          exit
+          error_handler e 
         end
       end
       set_rd('lm_time_sk')
@@ -101,10 +100,21 @@ module POI
     end
 
     def work
-      @pduer  = producer
-      @writer = consumer
-      @pduer.join
-      @writer.join
+      begin
+        @pduer  = producer
+        @writer = consumer
+        @pduer.join
+        @writer.join
+      rescue=>e
+        error_handler e
+      end
+    end
+
+    def error_handler(e, len=@all_amount)
+      set_rd('lm_time_sk', @landmark[:updated_at])
+      msg  = %Q(#{Time.now} #{e.class} #{e.message} finished: #{@counter}, unfinished: #{len-@counter}, timeleft: #{((Time.now-@timer)*len/@counter).to_i} seconds.\n)
+      log(msg)
+      exit
     end
 
    # html content for debug purpose
