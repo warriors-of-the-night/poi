@@ -7,29 +7,41 @@ end
 # class Hospital
 module POI
   class Hospital
-    BASE_URL ='http://www.a-hospital.com'
+
+    BASE_URL = 'http://www.a-hospital.com'
+
+      Map    = {
+        "hospital"        => "/w/全国医院列表",
+        "plastic_surgery" => "/w/整形美容院列表",
+        "gynecology"      => "/w/妇产科医院及儿童医院列表",
+        "tumor_hospital"  => "/w/全国肿瘤医院列表",
+        "ophthalmology"   => "/w/眼科医院列表",
+    }      
+
+     @type   = 'hospital'
+
+    def self.type
+      @type     
+    end
 
     def initialize
-      url = "#{BASE_URL}/w/%E5%85%A8%E5%9B%BD%E5%8C%BB%E9%99%A2%E5%88%97%E8%A1%A8"
-      html = Nokogiri::HTML open(url)
-      @provinces = html.xpath("//h3/span[@class='mw-headline' and text()!='']/..")
+      @type      = self.class.type
+      @hg_url    =  "#{BASE_URL}#{Map[@type]}"
     end
 
     def provinces
-      @provinces
+      html    =  Nokogiri::HTML open(URI.encode(@hg_url))
+      if @type=='hospital'
+        provs =  html.xpath("//h3/span[@class='mw-headline' and text()!='']/..")
+      else
+        pois  = html.search('//div[@id="bodyContent"]/p[3]/a')
+        provs =  []
+        pois.each { |prov|
+          provs << prov if !prov['class']
+        }
+      end
+      provs
     end
-
-    def city_list
-      @cities = []
-      @provinces.each { |prov|
-        cities = prov.next_element.next_element.xpath("./a")
-        cities.each do |city|
-          @cities << { :province=>prov.text, :city_cn=>city.text, :uri=>city['href'] }
-        end
-      }
-      @cities
-    end
-    
 
     def landmarks(city)
       url  = "#{BASE_URL}#{city[:uri]}"
@@ -39,7 +51,7 @@ module POI
       hosp_list.each do |hosp|
         name = hosp.text
         hosps[name] = {
-          :cata          => 'hospital',
+          :cata          => city[:cata],
           :city_cn       => city[:city_cn],
           :source_domain => 'a-hospital.com',
         }
@@ -47,6 +59,36 @@ module POI
       hosps
     end
 
+    def all_hosps
+      cities = []
+      provinces.each { |prov|
+        pois = prov.next_element.next_element.xpath("./a")
+        pois.each do |city|
+          cities << {
+            :province => prov.text, 
+            :city_cn  => city.text.strip,
+            :uri      => city['href'],
+            :cata     => 'hospital',
+          }
+        end
+      }
+      cities
+    end
+    
+    def category
+      provinces.map { |prov|
+        {
+          :province  => prov.text.strip,
+          :uri       => prov['href'],
+          :cata      => @type,
+        }
+      }
+    end
+
+    def city_list
+      @cities = @type=='hospital' ? all_hosps : category
+    end
+    
     def hosps(city)
       url = "#{BASE_URL}#{city[:uri]}"
       html = Nokogiri::HTML open(url)
@@ -59,10 +101,20 @@ module POI
 
     def fetch_info(hosp, city)
       list = hosp.xpath("./../../ul/li")
-      base_info  = { :name=>hosp.text, :province=>city[:province], :city=>city[:city_cn] }
+      base_info  =  { 
+        :name     => hosp.text, 
+        :province => city[:province], 
+        :city     => city[:city_cn] 
+      }
       #website = list.at("./b[text()='医院网站']/..")
       #base_info[:homepage] = website.nil? ? nil : website.text.tr('医院网站：','')
-      intros = { :level=>'医院等级', :mode=>'经营方式', :dep=>'重点科室', :address=>'医院地址', :phone=>'联系电话' }
+      intros = { 
+        :level   => '医院等级', 
+        :mode    => '经营方式', 
+        :dep     => '重点科室', 
+        :address => '医院地址',
+        :phone   => '联系电话' 
+      }
       intros.update(intros) do |key, val| 
         item  =  list.at("./b[text()='#{val}']/../text()")
         item.nil? ? nil : item.to_s.tr('：','')
@@ -93,20 +145,16 @@ module POI
         rescue =>e
           limiter+=1
           retry if limiter<3
-          p e
-          warn "\e[31mError encountered when processing city: #{city[:city_cn]}\e[0m"
           case e
             when OpenURI::HTTPError
-              if e.message=="404 Not Found"
-                next
-              else
-                msg = %Q(#{Time.now} #{e} finished: #{city_id}, unfinished: #{ @cities.size-city_id }, Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n)
-                self.log(msg)
-                redis.set('hospital_stuck', city_id)
-                exit
-              end
+              msg = %Q(#{Time.now} #{e} finished: #{city_id}, 
+                        unfinished: #{ @cities.size-city_id }, 
+                        Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n)
+              log(msg)
+              redis.set('hospital_stuck', city_id)
+              exit
             else
-              self.log(%Q(#{Time.now} #{e} \n))
+              log(%Q(#{Time.now} #{e} \n))
           end
         end
         city_id+=1
@@ -116,8 +164,6 @@ module POI
     end
 
     def consumer(pipeline)
-      # Wait for producer
-      sleep(2)
       while true
         item = pipeline.pop
         existed_item = Db::BasePoiHospital.find_by(name: item[:name], city: item[:city])
@@ -127,4 +173,8 @@ module POI
     end
 
   end
+end
+
+%w(hospital/plastic_surgery_hospital.rb hospital/gynecology_hospital hospital/tumor_hospital).each do |file|
+  require_relative(file)
 end
