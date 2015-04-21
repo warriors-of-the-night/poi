@@ -18,15 +18,15 @@ module POI
         "ophthalmology"   => "/w/眼科医院列表",
     }      
 
-     @type   = 'hospital'
+    @type = 'hospital'
 
     def self.type
       @type     
     end
 
     def initialize
-      @type      = self.class.type
-      @hg_url    =  "#{BASE_URL}#{Map[@type]}"
+      @type   = self.class.type
+      @hg_url =  "#{BASE_URL}#{Map[@type]}"
     end
 
     def provinces
@@ -44,22 +44,26 @@ module POI
     end
 
     def landmarks(city)
-      url  = "#{BASE_URL}#{city[:uri]}"
-      html = Nokogiri::HTML open(url)
-      hosp_list = html.xpath("//ul/li/b/a")
-      hosps = {}
-      hosp_list.each do |hosp|
-        name = hosp.text
-        hosps[name] = {
-          :cata          => city[:cata],
-          :city_cn       => city[:city_cn],
-          :source_domain => 'a-hospital.com',
-        }
+      hosps =  {}
+      url   =  "#{BASE_URL}#{city[:uri]}"
+      begin 
+        html = Nokogiri::HTML open(url)
+        hosp_list = html.xpath("//ul/li/b/a")
+        hosp_list.each do |hosp|
+          name = hosp.text
+          hosps[name] = {
+            :cata          => city[:cata],
+            :city_cn       => city[:city_cn],
+            :source_domain => 'a-hospital.com',
+          }
+        end
+      rescue=>e
+        raise e unless e.message=="404 Not Found"
       end
       hosps
     end
 
-    def all_hosps
+    def full_amount
       cities = []
       provinces.each { |prov|
         pois = prov.next_element.next_element.xpath("./a")
@@ -75,7 +79,7 @@ module POI
       cities
     end
     
-    def category
+    def part_amount
       provinces.map { |prov|
         {
           :province  => prov.text.strip,
@@ -86,7 +90,7 @@ module POI
     end
 
     def city_list
-      @cities = @type=='hospital' ? all_hosps : category
+      @cities = @type=='hospital' ? full_amount : part_amount
     end
     
     def hosps(city)
