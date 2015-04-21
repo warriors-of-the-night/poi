@@ -147,12 +147,12 @@ module POI
           retry if limiter<3
           case e
             when OpenURI::HTTPError
-              msg = %Q(#{Time.now} #{e} finished: #{city_id}, 
-                        unfinished: #{ @cities.size-city_id }, 
-                        Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n)
-              log(msg)
-              redis.set('hospital_stuck', city_id)
-              exit
+              unless e.message=="404 Not Found"
+                msg = %Q(#{Time.now} #{e} finished: #{city_id}, unfinished: #{ @cities.size-city_id }, Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n)
+                log(msg)
+                redis.set('hospital_stuck', city_id)
+                exit
+              end
             else
               log(%Q(#{Time.now} #{e} \n))
           end

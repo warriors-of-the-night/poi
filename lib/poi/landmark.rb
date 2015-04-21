@@ -4,7 +4,8 @@ class_files = %w( landmark/meituan     landmark/baidu_waimai
                   landmark/train       landmark/metro 
                   landmark/scene       landmark/university
                   landmark/consulate   landmark/embassy
-                  landmark/baidu_lvyou landmark/tongcheng)
+                  landmark/baidu_lvyou landmark/tongcheng
+                  landmark/institution)
 class_files.each { |file| require_relative file }
 module Db
   class BasePoiLandmark < ActiveRecord::Base
@@ -40,6 +41,7 @@ module POI
           :expo          => POI::ExpoCenter,
           :venue         => POI::Venue,
           :tongcheng     => TongCheng,
+          :institution   => Institution,
         }
 
       def initialize(web_site) 
