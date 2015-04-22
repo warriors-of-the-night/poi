@@ -65,7 +65,6 @@ module POI
             @elong_city = @elong_cities.find_by(NameShort: city_cn)
             pois        = @crawler.landmarks(city)
             pois.each do |name, city_info|
-              puts "Fetching pois: #{name}'s location, type: #{city_info[:cata]}, city: #{city_info[:city_cn]}"
               begin
                 addrs = location(name, city_info)
                 redo if addrs.nil?
@@ -73,10 +72,8 @@ module POI
                   :name          => name,
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
-                puts "\e[32mFinished!\e[0m"
               rescue=>e
-                warn "#{e}\n#{e.backtrace.join("\n")}"
-                next
+                error_handler e
               end
             end
             @counter+=1
@@ -86,11 +83,16 @@ module POI
 
       def consumer 
         Thread.new {
+          begin 
           while @pduer.status or @pipe.length>0 do 
             row     =  @pipe.pop
+            puts "Inserting #{row[:name]}..."
             existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
             existed.nil? ? @landmarks.new(row).save : existed.update(row)
             sleep(1/(@pipe.length+1))
+          end
+          rescue=>e
+            error_handler e
           end
         }
       end
@@ -101,10 +103,8 @@ module POI
           @writer = consumer
           @pduer.join
           @writer.join
-        rescue=>e
-          warn "#{e}\n#{e.backtrace.join("\n")}"
-          set_rd(@key,@counter+@start)
-          exit
+        rescue Interrupt=>e
+          error_handler e 
         end
         set_rd(@key)
         puts "\e[32m Congratulation! All things Finished.\e[0m"
@@ -147,6 +147,12 @@ module POI
         addr  = geo_dtls['addressComponent']
         [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
 
+      end
+     
+      def error_handler(e)
+        warn "#{e}\n#{e.backtrace.join("\n")}"
+        set_rd(@key,@counter+@start)
+        exit 
       end
 
       def get_rd(key, init_value=0)

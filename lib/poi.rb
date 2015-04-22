@@ -4,6 +4,7 @@ require 'socket'
 require 'active_record'
 require 'db'
 require 'baidumap'
+require 'pidfile'
 # require sub classes
 require 'poi/school'
 require 'poi/expo'
