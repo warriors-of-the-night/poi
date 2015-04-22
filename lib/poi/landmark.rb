@@ -66,14 +66,17 @@ module POI
             pois        = @crawler.landmarks(city)
             pois.each do |name, city_info|
               begin
+                addrs = {}
                 addrs = location(name, city_info)
                 redo if addrs.nil?
                 @pipe << {
                   :name          => name,
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
-              rescue=>e
-                error_handler e
+              rescue TypeError=>e
+                warn "#{e}\n#{e.backtrace.join("\n")}"
+              rescue =>other_err
+                error_handler other_err
               end
             end
             @counter+=1
@@ -92,7 +95,7 @@ module POI
             sleep(1/(@pipe.length+1))
           end
           rescue=>e
-            error_handler e
+            error_handler e          
           end
         }
       end
@@ -123,7 +126,7 @@ module POI
           lng_lat   = geo_crd['location']
           geo_dtls  = @geocoder.decode(lng_lat['lat'],lng_lat['lng']).result
 
-          if check_city(geo_dtls, city)
+          if same_city?(geo_dtls, city)
             addr_dtls = {
               :lng      => lng_lat['lng'],
               :lat      => lng_lat['lat'],
@@ -143,7 +146,7 @@ module POI
         @geocoder = Baidumap::Request::Geocoder.new(Keys[@idx_of_keys])
       end
 
-      def check_city(geo_dtls, city)
+      def same_city?(geo_dtls, city)
         addr  = geo_dtls['addressComponent']
         [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
 
