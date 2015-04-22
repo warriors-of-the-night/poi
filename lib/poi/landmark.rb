@@ -34,14 +34,14 @@ module POI
           :consulate     => Consulate,
           :embassy       => Embassy,
           :ly_baidu      => BaiduLvyou,
+          :institution   => Institution,
+          :tongcheng     => TongCheng,
           :hospital      => POI::Hospital,
           :high_school   => POI::School::High,
           :middle_school => POI::School::Middle,
-          :elementary_school=> POI::School::Elementary,
           :expo          => POI::ExpoCenter,
           :venue         => POI::Venue,
-          :tongcheng     => TongCheng,
-          :institution   => Institution,
+          :elementary_school=> POI::School::Elementary,
         }
 
       def initialize(web_site) 
@@ -86,16 +86,11 @@ module POI
 
       def consumer 
         Thread.new {
-          begin
           while @pduer.status or @pipe.length>0 do 
             row     =  @pipe.pop
             existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
             existed.nil? ? @landmarks.new(row).save : existed.update(row)
             sleep(1/(@pipe.length+1))
-          end
-          rescue=>e
-            warn "#{e}\n#{e.backtrace.join("\n")}"
-            exit
           end
         }
       end
@@ -112,7 +107,7 @@ module POI
           exit
         end
         set_rd(@key)
-        abort( "Congratulation! All things Finished.")
+        puts "\e[32m Congratulation! All things Finished.\e[0m"
       end 
 
       def location(name, city_info)
@@ -151,6 +146,7 @@ module POI
       def check_city(geo_dtls, city)
         addr  = geo_dtls['addressComponent']
         [addr['city'], addr['district']].any? { |ad| city.nil? or ad.include?(city.to_s) }
+
       end
 
       def get_rd(key, init_value=0)

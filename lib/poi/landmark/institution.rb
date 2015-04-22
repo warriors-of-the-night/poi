@@ -32,14 +32,14 @@ module POI
         pois.map { |poi|
           {
             :uri      => poi['href'],
-            :province => pois.text.strip,
+            :province => poi.text.strip,
           }
         }
       end
       
       def pg_num
         page_header = @html.at_css('span#ctl00_ContentPlaceHolder1_ctl03_PagerControl1')
-        page_header.text[/\d+/]
+        page_header.text[/\d+/].to_i
       end
 
     end
