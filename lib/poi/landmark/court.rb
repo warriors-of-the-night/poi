@@ -14,7 +14,7 @@ module POI
             url   = "http://#{URI(city[:uri]).host}/fayuan_#{pg_id}"
             @html = Nokogiri::HTML HTTParty.get(url).body
           end
-          pois = @html.search('//ul[@class="comlist"/li/div[@class="company"]/a').each { |poi|
+          pois = @html.search('//ul[@class="comlist"]/li/div[@class="company"]/a').each { |poi|
             name = poi['title']
             lms[name] = {
               :cata          => 'court',
