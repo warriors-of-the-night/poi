@@ -17,7 +17,7 @@ module POI
     end
 
    # Extract text from content
-    def extract(doc=nil)
+    def extract_text(doc=nil)
       return "" if doc.nil?
       doc.traverse { |node|  node.text.gsub(/\s|　/, "") }
     end
@@ -30,7 +30,7 @@ module POI
 
    # Logger
     def log(msg)
-      log_file = File.open("encyclopedia.log", "a+")
+      log_file = File.open("log/encyclopedia.log", "a+")
       log_file.syswrite(msg)
       log_file.close
     end
@@ -44,7 +44,7 @@ module POI
       if @summary.nil? or @summary.text.strip.size<100
         content_h2 = ''
         @content.search("p[text()!='']").each do |para|      
-          content_h2 = extract(para)
+          content_h2 = extract_text(para)
           break if content_h2.size > 50
         end
         if content_h2==''
@@ -53,25 +53,24 @@ module POI
             break if content_h2.size > 50
           end
         end
-        extract(@summary)+content_h2
+        extract_text(@summary)+content_h2
       else
-        extract(@summary)
+        extract_text(@summary)
       end
     end
     
    # Fetch landmark from database and call function `content` to crawl encyclopedia content 
     def producer
       Thread.new { 
-      start      =  get_rd('lm_time_sk')
-      landmarks  =  @landmarks.where("updated_at>=?", start).order("id ASC")
-      @all_amount= landmarks.size
+      start       =  get_rd('lm_time_sk')
+      landmarks   =  @landmarks.where("updated_at>=?", start).order("id ASC")
+      @all_amount = landmarks.size
       @timer, @counter =  Time.now, 0
       landmarks.find_each do |landmark|
         @landmark = landmark
         begin
           sleep(3*rand(0.0..1.0))              # change this if necessary
           @counter+=1
-          puts "Crawling encyclopedia content of #{landmark[:name]}"
           elp_content = content(landmark[:name]) || content("#{landmark[:city_cn]}#{landmark[:name]}")
           encyclopedia =  {
             :name      => landmark[:name], 
@@ -90,11 +89,15 @@ module POI
    # Insert each row record into database
     def consumer
       Thread.new {
-        while @pipe.length>0 or @pduer.status
+        begin
+        while @pipe.size>0 or @pduer.status
           row     = @pipe.pop
           existed = @encyclopedia.find_by(name: row[:name], city: row[:city])
           existed.nil? ? @encyclopedia.new(row).save : existed.update(row)
-          sleep(1/(@pipe.length+1))
+          sleep(1/(@pipe.size+1))
+        end
+        rescue=>e
+          error_handler e
         end
       }
     end

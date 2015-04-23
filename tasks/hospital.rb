@@ -5,7 +5,7 @@ namespace :poi do
 #
   desc "download the hospitals of the whole country "
   task :hospital do 
-    
+    Dir.mkdir 'log' unless Dir.exists? 'log'
     pipeline = Queue.new
     hospital = POI::Hospital.new
 
@@ -14,13 +14,13 @@ namespace :poi do
     city_id = redis.get('hospital_stuck').nil? ? 0 : redis.get('hospital_stuck').to_i
 
     # producer thread
-    producer = Thread.new(city_id, pipeline,redis) do
+    producer = Thread.new do
       hospital.producer(city_id, pipeline, redis)
     end
 
     #Consumer thread
-    consumer = Thread.new(pipeline) do
-      hospital.consumer(pipeline)
+    consumer = Thread.new do
+      hospital.consumer(pipeline, producer)
     end
 
     # Wait for child threads

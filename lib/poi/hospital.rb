@@ -25,8 +25,9 @@ module POI
     end
 
     def initialize
-      @type   = self.class.type
+      @type   =  self.class.type
       @hg_url =  "#{BASE_URL}#{Map[@type]}"
+      @table  =  Db::BasePoiHospital 
     end
 
     def provinces
@@ -128,7 +129,7 @@ module POI
 
    # log msg
     def log(msg)
-      log_file = File.open("hospital.log", "a+")
+      log_file = File.open("log/hospital.log", "a+")
       log_file.syswrite(msg)
       log_file.close
     end
@@ -137,21 +138,19 @@ module POI
       timer = Time.now 
       city_list.drop(city_id).each do |city|
         sleep(2)    # Sleep for 2 second, change it if necessary
-        puts "Fetching hospitals of city: #{city[:province]}#{city[:city_cn]} "
         limiter = 0
         begin
           hospitals = hosps(city)
           hospitals.each do |hosp|
             pipeline.push(hosp)
           end
-          puts "\e[32mfinished!\e[0m"
         # Exception handler
         rescue =>e
           limiter+=1
           retry if limiter<3
           msg   = "#{Time.now} #{e} "
           unless e.message=="404 Not Found"
-            msg +="finished: #{city_id}, unfinished: #{ @cities.size-city_id }, Timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n"
+            msg +="finished: #{city_id}, unfinished: #{ @cities.size-city_id }, timeleft: #{((Time.now-timer)*city_id/@cities.size).to_i} seconds.\n"
             redis.set('hospital_stuck', city_id)
             log(msg)
             exit
@@ -164,12 +163,12 @@ module POI
       abort "\e[32m Works finished!\e[0m" 
     end
 
-    def consumer(pipeline)
-      while true
+    def consumer(pipeline, prod)
+      while pipeline.size>0 or prod.status
         item = pipeline.pop
-        existed_item = Db::BasePoiHospital.find_by(name: item[:name], city: item[:city])
-        existed_item.nil? ? Db::BasePoiHospital.new(item).save : existed_item.update(item)
-        sleep(1.0/(pipeline.length+1))
+        existed_item = @table.find_by(name: item[:name], city: item[:city])
+        existed_item.nil? ? @table.new(item).save : existed_item.update(item)
+        sleep(1.0/(pipeline.size+1))
       end
     end
 
