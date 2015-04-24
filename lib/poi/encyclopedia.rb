@@ -30,7 +30,7 @@ module POI
 
    # Logger
     def log(msg)
-      log_file = File.open("log/encyclopedia.log", "a+")
+      log_file = File.open("log/encyclopedia.err", "a+")
       log_file.syswrite(msg)
       log_file.close
     end
@@ -70,6 +70,7 @@ module POI
         @landmark = landmark
         begin
           sleep(3*rand(0.0..1.0))              # change this if necessary
+          limiter = 0
           @counter+=1
           elp_content = content(landmark[:name]) || content("#{landmark[:city_cn]}#{landmark[:name]}")
           encyclopedia =  {
@@ -79,10 +80,16 @@ module POI
             }
           @pipe << encyclopedia
         rescue => e
-          error_handler e 
+          limiter+=1
+          retry if limiter<3
+          if e.message=="404 Not Found"
+            puts "#{landmark}"
+            next
+          else
+            error_handler e
+          end
         end
       end
-      set_rd('lm_time_sk')
       }
     end
 
@@ -111,13 +118,14 @@ module POI
       rescue Interrupt=>e
         error_handler e
       end
+      set_rd('lm_time_sk')
     end
 
     def error_handler(e, c=@counter, len=@all_amount)
       set_rd('lm_time_sk', @landmark[:updated_at])
       msg  = %Q(#{Time.now} #{e.class} #{e.message} finished: #{c}, unfinished: #{len-c}, timeleft: #{((Time.now-@timer)*len/c).to_i} seconds.\n)
       log(msg)
-      exit
+      raise e
     end
 
    # html content for debug purpose
