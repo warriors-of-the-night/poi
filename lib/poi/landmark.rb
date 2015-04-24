@@ -76,7 +76,7 @@ module POI
                 }.merge(city_info).merge(addrs)
               rescue TypeError=>e
                 warn "#{e}\n#{e.backtrace.join("\n")}"
-              rescue =>other_err
+              rescue Exception=>other_err
                 error_handler other_err
               end
             end
@@ -87,16 +87,12 @@ module POI
 
       def consumer 
         Thread.new {
-          begin 
           while @pduer.status or @pipe.length>0 do 
             row     =  @pipe.pop
             puts "Inserting #{row[:name]}..."
             existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
             existed.nil? ? @landmarks.new(row).save : existed.update(row)
             sleep(1/(@pipe.length+1))
-          end
-          rescue=>e
-            error_handler e          
           end
         }
       end
@@ -107,7 +103,7 @@ module POI
           @writer = consumer
           @pduer.join
           @writer.join
-        rescue Interrupt=>e
+        rescue Exception=>e
           error_handler e 
         end
         set_rd(@key)
@@ -156,7 +152,7 @@ module POI
       def error_handler(e)
         warn "#{e}\n#{e.backtrace.join("\n")}"
         set_rd(@key,@counter+@start)
-        exit 
+        raise e 
       end
 
       def get_rd(key, init_value=0)
