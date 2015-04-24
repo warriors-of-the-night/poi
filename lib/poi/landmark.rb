@@ -75,9 +75,8 @@ module POI
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
               rescue TypeError=>e
-                warn "#{e}\n#{e.backtrace.join("\n")}"
-              rescue Exception=>other_err
-                error_handler other_err
+                warn "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+                next
               end
             end
             @counter+=1
@@ -87,12 +86,12 @@ module POI
 
       def consumer 
         Thread.new {
-          while @pduer.status or @pipe.length>0 do 
+          while @pipe.size>0 or @pduer.status do 
             row     =  @pipe.pop
             puts "Inserting #{row[:name]}..."
             existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
             existed.nil? ? @landmarks.new(row).save : existed.update(row)
-            sleep(1/(@pipe.length+1))
+            sleep(1/(@pipe.size+1))
           end
         }
       end
@@ -150,7 +149,6 @@ module POI
       end
      
       def error_handler(e)
-        warn "#{e}\n#{e.backtrace.join("\n")}"
         set_rd(@key,@counter+@start)
         raise e 
       end
