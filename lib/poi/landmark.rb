@@ -18,11 +18,12 @@ end
 module POI
   module LandMark
     class Worker
-      Keys = %w(nML7mZ3xMUkAPjz3KAWQCq3j B76dd0064529522a1a9bedadbfaf48f6 57e45E513cb63ccc69895779634be327  
-                aQx1gGYrQGqIrUAozPHlUDAC ZfGRFj1029I1lkZrTSPFbCIW  E3m8XYAayQY0Z0Rm32zaNZmq SWnBEi8yt4klHKPHFzi5Xuvm  
-                A5KusGlYIoejSBgLpgIO4ypH GG4XEskQdLZTT4ADvOjYcDmV PH5XOjTkT20Yx7YNtjczLyE3 ITRp7wngpB1aulNFgoryaRGG
-                uZIOFIRWBLptE04mHwNrMcAj N4BeVM6t7LTjjbDXHbDMMZkx Tlyg0gekTuqpUH6bMPLcsth9 2Rei7o9gbdqRLSGXeMHj5DNX
-                L7oWwVgcqzz9ZTGsfwlftI0o)
+      REGEX = /\s+|( +)|( +)/
+      Keys  = %w(nML7mZ3xMUkAPjz3KAWQCq3j B76dd0064529522a1a9bedadbfaf48f6 57e45E513cb63ccc69895779634be327  
+                 aQx1gGYrQGqIrUAozPHlUDAC ZfGRFj1029I1lkZrTSPFbCIW  E3m8XYAayQY0Z0Rm32zaNZmq SWnBEi8yt4klHKPHFzi5Xuvm  
+                 A5KusGlYIoejSBgLpgIO4ypH GG4XEskQdLZTT4ADvOjYcDmV PH5XOjTkT20Yx7YNtjczLyE3 ITRp7wngpB1aulNFgoryaRGG
+                 uZIOFIRWBLptE04mHwNrMcAj N4BeVM6t7LTjjbDXHbDMMZkx Tlyg0gekTuqpUH6bMPLcsth9 2Rei7o9gbdqRLSGXeMHj5DNX
+                 L7oWwVgcqzz9ZTGsfwlftI0o)
                 
        CP  = {
           :meituan       => MeiTuan,
@@ -74,7 +75,7 @@ module POI
                 addrs = location(name, city_info)
                 redo if addrs.nil?
                 @pipe << {
-                  :name          => name,
+                  :name          => name.gsub(REGEX,''),
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
               rescue TypeError=>e
