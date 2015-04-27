@@ -8,6 +8,7 @@ end
 module POI
   class Encyclopedia
     BASE_URL = 'http://www.baike.com/wiki/'
+    REGEX    = /\s+|（.+）|( +)/
 
     def initialize
       @landmarks    =   Db::BasePoiLandmark
@@ -24,8 +25,8 @@ module POI
     
    # Process the landmark as keyword,for example:上海广场（原无限度）--> 上海广场,
     def url(landmark)
-      landmark = landmark.gsub(/（.+）/,'')
-      URI::encode "#{BASE_URL}#{landmark}"
+      keyword = landmark.gsub(REGEX,'')
+      URI::encode "#{BASE_URL}#{keyword}"
     end
 
    # Logger
@@ -37,9 +38,9 @@ module POI
 
    # Encyclopedia content of landmark
     def content(landmark)
-      @html    = Nokogiri::HTML open(url(landmark))
+      @html    = Nokogiri::HTML HTTParty.get(url(landmark)).body
       @content = @html.at("//div[@id='content']")
-      return nil if @content.nil?
+      return  if @content.nil?
       @summary = @html.at("//div[@class='summary']/p[text()!='']")
       if @summary.nil? or @summary.text.strip.size<100
         content_h2 = ''
@@ -67,11 +68,10 @@ module POI
       @all_amount = landmarks.size
       @timer, @counter =  Time.now, 0
       landmarks.find_each do |landmark|
-        @landmark = landmark
+        @landmark =  landmark
+        limiter   =  0
         begin
-          sleep(3*rand(0.0..1.0))              # change this if necessary
-          limiter = 0
-          @counter+=1
+          sleep(3*rand(0.0..1.0))  # change this if necessary
           elp_content = content(landmark[:name]) || content("#{landmark[:city_cn]}#{landmark[:name]}")
           encyclopedia =  {
             :name      => landmark[:name], 
@@ -79,6 +79,7 @@ module POI
             :content   => elp_content,
             }
           @pipe << encyclopedia
+          @counter+=1
         rescue => e
           limiter+=1
           retry if limiter<3
@@ -96,15 +97,11 @@ module POI
    # Insert each row record into database
     def consumer
       Thread.new {
-        begin
         while @pipe.size>0 or @pduer.status
           row     = @pipe.pop
           existed = @encyclopedia.find_by(name: row[:name], city: row[:city])
           existed.nil? ? @encyclopedia.new(row).save : existed.update(row)
           sleep(1/(@pipe.size+1))
-        end
-        rescue=>e
-          error_handler e
         end
       }
     end
@@ -115,7 +112,7 @@ module POI
         @writer = consumer
         @pduer.join
         @writer.join
-      rescue Interrupt=>e
+      rescue Exception=>e
         error_handler e
       end
       set_rd('lm_time_sk')
