@@ -15,11 +15,12 @@ module POI
             @html = Nokogiri::HTML HTTParty.get(url).body 
           end
           list = @html.search('li[@class="title_li"]/a[2]').each do |a|
-            name      = a.text.split(' ')[0]
-            lms[name] = {
+            a.text.split(' ').each { |name|
+              lms[name.gsub(/ /,'')] = {
               :cata          => 'institution',
               :source_domain => 'wanfangdata.com.cn',
               :province      =>  city[:province]
+              }
             }
           end 
         }
