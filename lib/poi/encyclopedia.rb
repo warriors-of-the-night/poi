@@ -83,7 +83,7 @@ module POI
         rescue => e
           limiter+=1
           retry if limiter<3
-          if e.message=="404 Not Found"
+          if e.message=="404 Not Found" or e.class==URI::InvalidURIError
             puts "#{landmark}"
             next
           else
@@ -122,6 +122,7 @@ module POI
       set_rd('lm_time_sk', @landmark[:updated_at])
       msg  = %Q(#{Time.now} #{e.class} #{e.message} finished: #{c}, unfinished: #{len-c}, timeleft: #{((Time.now-@timer)*len/c).to_i} seconds.\n)
       log(msg)
+      warn @landmark[:name]
       raise e
     end
 
