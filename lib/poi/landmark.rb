@@ -6,7 +6,7 @@ class_files = %w( landmark/meituan     landmark/baidu_waimai
                   landmark/consulate   landmark/embassy
                   landmark/baidu_lvyou landmark/tongcheng
                   landmark/institution landmark/court
-                  landmark/bus_station)
+                  landmark/bus_station landmark/zhuna)
 
 class_files.each { |file| require_relative file }
 module Db
@@ -15,6 +15,7 @@ module Db
   class BaseElongHotelCity < ActiveRecord::Base
   end
 end
+
 module POI
   module LandMark
     class Worker
@@ -47,12 +48,13 @@ module POI
           :expo          => POI::ExpoCenter,
           :venue         => POI::Venue,
           :elementary_school=> POI::School::Elementary,
+          :zhuna         => Zhuna,
         }
 
       def initialize(web_site) 
         @idx_of_keys  =  0
         @counter      =  0
-        @redis        =  Redis.new(:host=>"127.0.0.1", :port=>6379)
+        @redis        =  Redis.new(:host=>"test1", :port=>6379)
         @key          =  web_site
         @pipe         =  Queue.new
         @geocoder     =  Baidumap::Request::Geocoder.new(Keys[@idx_of_keys])
@@ -63,22 +65,31 @@ module POI
 
       def producer
         Thread.new {
+
           city_list   = @crawler.city_list 
+
             @start    = get_rd(@key)
             city_list.drop(@start).each do |city|
+
             city_cn     = city[:city_cn]
-            @elong_city = @elong_cities.find_by(NameShort: city_cn)
+puts "A" + city_cn
+#            @elong_city = @elong_cities.find_by(NameShort: city_cn)
+#@elong_city = @elong_cities.find(NameShort: city_cn)
+puts "B" + city_cn
             pois        = @crawler.landmarks(city)
+puts pois
             pois.each do |name, city_info|
               begin
                 addrs = {}
                 addrs = location(name, city_info)
+  
                 redo if addrs.nil?
                 @pipe << {
                   :name          => name.gsub(REGEX,''),
                   :elong_city_id => @elong_city.nil? ? '0000' : @elong_city[:Code],
                 }.merge(city_info).merge(addrs)
               rescue TypeError=>e
+                puts e
                 warn "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
                 next
               end
@@ -86,15 +97,37 @@ module POI
             @counter+=1
           end
         }
+
       end
 
       def consumer 
         Thread.new {
-          while @pipe.size>0 or @pduer.status do 
+#          while @pipe.size>0 or @pduer.status do 
+while Thread.list.size > 2 do 
+  #puts "test" + @pipe.size.to_s
+  if @pipe.size > 0 
             row     =  @pipe.pop
-            puts "Inserting #{row[:name]}..."
+            puts 0
+            puts ENV["ELONG_ENV"]
+	    puts "Inserting #{row[:name]}..."
             existed = @landmarks.find_by(name: row[:name],city_cn: row[:city_cn],source_domain: row[:source_domain])
-            existed.nil? ? @landmarks.new(row).save : existed.update(row)
+            p 1
+	    p existed
+            p 2
+            #existed.nil? ? @landmarks.new(row).save : existed.update(row)
+            if existed.nil?
+              land = @landmarks.new(row)
+              p land
+              p 3
+              land.save
+              p 4
+            else
+              existed.update(row)
+              p 5
+            end
+            
+  puts "Inserting complete"
+  end
             sleep(1/(@pipe.size+1))
           end
         }
@@ -104,9 +137,17 @@ module POI
         begin 
           @pduer  = producer
           @writer = consumer
-          @pduer.join
-          @writer.join
+
+  #          @pduer.join
+
+
+   #         @writer.join
+
+while Thread.list.size > 1 do 
+  sleep(1)
+end
         rescue Exception=>e
+p e
           error_handler e 
         end
         set_rd(@key)

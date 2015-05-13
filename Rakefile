@@ -13,6 +13,7 @@ require './tasks/venue'
 require './tasks/baidumap'
 require './tasks/hospital'
 require './tasks/encyclopedia'
+require './tasks/zhuna'
 namespace :poi do
   desc " Fetch landmarks data from web,For example: rake poi:landmark cp=meituan"
 		task :landmark do 
@@ -22,3 +23,12 @@ namespace :poi do
 		end 
 end
 
+desc 'haha'
+task :haha do
+  puts "haha"
+end
+
+desc 'haha_args'
+task :hha,[:a1] do |t,args|
+   p args
+end
